@@ -840,7 +840,7 @@ export default function DSATutorPage() {
           {questions.length > 0 && currentQuestion ? (
             <PanelGroup direction="horizontal" className="flex flex-1"> 
               {/* Left Panel - Split into Challenge and Code Assistance */}
-               <Panel defaultSize={45} minSize={20} maxSize={70}>
+               <Panel defaultSize={45} minSize={40} maxSize={70}>
   <div className="w-full h-full border-r dsa-left-panel">
     <PanelGroup direction="vertical" className="h-full">
       <Panel defaultSize={50} minSize={20}>
@@ -853,7 +853,7 @@ export default function DSATutorPage() {
         </div>
       </Panel>
       <PanelResizeHandle className="h-1 bg-muted hover:bg-primary transition cursor-row-resize" />
-      <Panel defaultSize={50} minSize={20}>
+      <Panel defaultSize={50} minSize={60}>
         <div className="h-full flex flex-col">
           <CodeAssistance
             assistanceHeight={assistanceHeight}

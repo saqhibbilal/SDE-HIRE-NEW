@@ -410,7 +410,7 @@ export function AIAssistanceTab({
       {(serverStatus === "offline" || explanationServerStatus === "offline") && (
         <Alert variant="destructive" className="mb-4">
           <AlertTriangle className="h-4 w-4 mr-2" />
-          <AlertDescription>
+          <AlertDescription className="text-[13px]">
             {serverStatus === "offline" && explanationServerStatus === "offline"
               ? "AI assistance servers are offline. Please start the servers and try again."
               : serverStatus === "offline"
@@ -463,7 +463,7 @@ export function AIAssistanceTab({
           <div className="flex flex-col h-full">
             <div className="flex items-center gap-2 mb-4">
               <RefreshCw className="h-4 w-4 animate-spin" />
-              <span className="text-sm">
+              <span className="text-[13px]">
                 {activeButton === "generation"
                   ? "Generating code..."
                   : activeButton === "explanation"
@@ -474,7 +474,7 @@ export function AIAssistanceTab({
 
             {streamingContent && (
               <div className="flex-1 overflow-auto">
-                <pre className="whitespace-pre-wrap font-mono text-sm p-4 bg-muted rounded-md">{streamingContent}</pre>
+                <pre className="whitespace-pre-wrap font-mono text-[13px] p-4 bg-muted rounded-md">{streamingContent}</pre>
               </div>
             )}
           </div>
@@ -484,9 +484,9 @@ export function AIAssistanceTab({
           </Alert>
         ) : responseContent ? (
           <div className="flex flex-col h-full">
-            {fromCache && <p className="text-xs text-muted-foreground italic mb-2">Using cached response</p>}
+            {fromCache && <p className="text-[11px] text-muted-foreground italic mb-2">Using cached response</p>}
             <div className="flex-1 overflow-auto">
-              <pre className="whitespace-pre-wrap font-mono text-sm p-4 bg-muted rounded-md">{responseContent}</pre>
+              <pre className="whitespace-pre-wrap font-mono text-[13px] p-4 bg-muted rounded-md">{responseContent}</pre>
             </div>
 
             {activeButton === "generation" && (
@@ -499,7 +499,7 @@ export function AIAssistanceTab({
             )}
           </div>
         ) : (
-          <div className="text-muted-foreground text-center h-full flex items-center justify-center">
+          <div className="text-[13px] text-muted-foreground text-center h-full flex items-center justify-center">
             {activeButton
               ? "No content to display. Try again or select a different option."
               : "Select an option above to get AI assistance"}

@@ -28,7 +28,7 @@ export function ChallengeDescription({
 
       <div className="p-4 space-y-4 overflow-auto" style={{ height: `${challengeHeight - 40}px` }}>
         <div>
-          <h2 className="text-lg md:text-xl font-bold mb-2 dark:neon-text-cyan">
+          <h2 className="text-base md:text-lg font-bold mb-2 dark:neon-text-cyan">
             {currentQuestionIndex + 1}. {currentQuestion.title}
           </h2>
           <div className="flex items-center gap-2 mb-4">
@@ -44,23 +44,25 @@ export function ChallengeDescription({
               {currentQuestion.difficulty}
             </Badge>
           </div>
-          <p className="whitespace-pre-line mb-4 text-sm md:text-base">{currentQuestion.question}</p>
+          <p className="whitespace-pre-line mb-4 text-xs md:text-sm">{currentQuestion.question}</p>
+
         </div>
 
         <div className="space-y-3">
           <div>
-            <h3 className="font-semibold text-sm md:text-base dark:neon-text-yellow">Input Format</h3>
-            <p className="mt-1 whitespace-pre-line text-sm">{currentQuestion.input_format}</p>
+            <h3 className="font-semibold text-xs md:text-sm dark:neon-text-yellow">Input Format</h3>
+            <p className="mt-1 whitespace-pre-line text-xs">{currentQuestion.input_format}</p>
           </div>
 
           <div>
-            <h3 className="font-semibold text-sm md:text-base dark:neon-text-yellow">Output Format</h3>
-            <p className="mt-1 whitespace-pre-line text-sm">{currentQuestion.output_format}</p>
+            <h3 className="font-semibold text-xs md:text-sm dark:neon-text-yellow">Output Format</h3>
+            <p className="mt-1 whitespace-pre-line text-xs">{currentQuestion.output_format}</p>
+
           </div>
 
           <div>
-            <h3 className="font-semibold text-sm md:text-base dark:neon-text-yellow">Constraints</h3>
-            <p className="mt-1 whitespace-pre-line text-sm">{currentQuestion.constraints}</p>
+            <h3 className="font-semibold text-xs md:text-sm dark:neon-text-yellow">Constraints</h3>
+            <p className="mt-1 whitespace-pre-line text-xs">{currentQuestion.constraints}</p>
           </div>
         </div>
 
@@ -68,26 +70,28 @@ export function ChallengeDescription({
 
         <div className="space-y-3">
           <div>
-            <h3 className="font-semibold text-sm md:text-base dark:neon-text-yellow">Example:</h3>
+            <h3 className="font-semibold text-xs md:text-sm dark:neon-text-yellow">Example:</h3>
             <div className="mt-2 space-y-2">
               <div>
-                <div className="text-xs font-medium text-muted-foreground">Input:</div>
-                <pre className="mt-1 bg-muted p-2 rounded-md overflow-x-auto text-xs">
-                  <code>{currentQuestion.sample_input}</code>
+                <div className="text-[11px] font-medium text-muted-foreground">Input:</div>
+                <pre className="mt-1 bg-muted p-2 rounded-md overflow-x-auto text-[11px]">
+                 <code>{currentQuestion.sample_input}</code>
                 </pre>
               </div>
               <div>
-                <div className="text-xs font-medium text-muted-foreground">Output:</div>
-                <pre className="mt-1 bg-muted p-2 rounded-md overflow-x-auto text-xs">
-                  <code>{currentQuestion.sample_output}</code>
-                </pre>
+                <div className="text-[11px] font-medium text-muted-foreground">Output:</div>
+               <pre className="mt-1 bg-muted p-2 rounded-md overflow-x-auto text-[11px]">
+               <code>{currentQuestion.sample_output}</code>
+              </pre>
               </div>
             </div>
           </div>
 
           <div>
-            <h3 className="font-semibold text-sm md:text-base dark:neon-text-yellow">Hint:</h3>
-            <p className="mt-1 text-sm">{currentQuestion.hint}</p>
+            <h3 className="font-semibold text-xs md:text-sm dark:neon-text-yellow">Hint:</h3>
+
+            <p className="mt-1 text-xs">{currentQuestion.hint}</p>
+
           </div>
         </div>
       </div>

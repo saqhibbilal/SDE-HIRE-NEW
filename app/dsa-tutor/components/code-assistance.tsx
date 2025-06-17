@@ -42,16 +42,17 @@ export function CodeAssistance({
         <TabsList className="w-full">
           <TabsTrigger
             value="problem"
-            className="flex-1 text-xs md:text-sm dark:data-[state=active]:neon-text-cyan dark:data-[state=active]:neon-border-cyan"
+            className="flex-1 text-[11px] md:text-[13px] dark:data-[state=active]:neon-text-cyan dark:data-[state=active]:neon-border-cyan"
           >
             <HelpCircle className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
             <span className="hidden xs:inline">Problem</span> Assistance
           </TabsTrigger>
           <TabsTrigger
             value="ai"
-            className="flex-1 text-xs md:text-sm dark:data-[state=active]:neon-text-pink dark:data-[state=active]:neon-border-pink"
+              className="flex-1 text-[11px] md:text-[13px] dark:data-[state=active]:neon-text-pink dark:data-[state=active]:neon-border-pink"
+
           >
-            <BrainCircuit className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
+            <BrainCircuit className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2"  />
             <span className="hidden xs:inline">AI</span> Assistance
           </TabsTrigger>
         </TabsList>
