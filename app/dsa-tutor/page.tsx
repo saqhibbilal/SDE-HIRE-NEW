@@ -822,8 +822,8 @@ export default function DSATutorPage() {
 
   return (
     <AuthLayout>
-      <div className="flex flex-col h-screen overflow-hidden">
-        <div className="border-b h-14 px-4 flex items-center justify-between bg-background">
+      <div className="flex flex-col h-screen ">
+        <div className="border-b h-14 px-4 flex items-center justify-between bg-background sticky top-0 z-10">
             <ProblemHeader
               questions={questions}
               currentQuestionIndex={currentQuestionIndex}
