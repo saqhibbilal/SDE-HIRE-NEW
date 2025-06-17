@@ -2,11 +2,15 @@ import { FileText } from "lucide-react"
 import { Separator } from "@/components/ui/separator"
 import { Badge } from "@/components/ui/badge"
 import type { Question } from "../types"
+//import { Button } from "@/components/ui/button"; // ADDED Button import (assuming it's from your ui library)
+
 
 interface ChallengeDescriptionProps {
   currentQuestion: Question
   currentQuestionIndex: number
   challengeHeight: number
+  //isCollapsed: boolean; // ADDED
+  //onToggleCollapse: () => void; // ADDED
 }
 
 export function ChallengeDescription({
@@ -14,6 +18,7 @@ export function ChallengeDescription({
   currentQuestionIndex,
   challengeHeight,
 }: ChallengeDescriptionProps) {
+ // const collapsedHeight = 40;
   return (
     <div style={{ height: `${challengeHeight}px` }} className="border-b">
       <div className="border-b bg-muted/30 px-4 py-2 flex items-center h-10 dark:border-cyan-500 dark:neon-border-cyan">
