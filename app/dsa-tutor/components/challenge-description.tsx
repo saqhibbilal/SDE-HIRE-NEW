@@ -25,9 +25,11 @@ export function ChallengeDescription({
         <FileText className="h-4 w-4 mr-2 dark:text-cyan-400" />
         <span className="font-medium dark:neon-text-cyan">Challenge</span>
       </div>
-
-      <div className="p-4 space-y-4 overflow-auto" style={{ height: `${challengeHeight - 40}px` }}>
-        <div>
+<div
+  className="pt-4 pr-4 pl-4 space-y-4 overflow-y-auto"
+  style={{ maxHeight: `${challengeHeight - 40}px`, paddingBottom: '10%' }}
+>        
+          <div>
           <h2 className="text-base md:text-lg font-bold mb-2 dark:neon-text-cyan">
             {currentQuestionIndex + 1}. {currentQuestion.title}
           </h2>
