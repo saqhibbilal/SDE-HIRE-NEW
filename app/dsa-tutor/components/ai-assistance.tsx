@@ -9,8 +9,8 @@ interface AIAssistanceTabProps {
   currentQuestionIndex: number
   selectedLanguage: any
   setCode: (code: string) => void
-  code?: string // Optional for backward compatibility
-  executionStatus?: "idle" | "running" | "success" | "error" // Optional
+  code?: string // Make this optional for backward compatibility
+  executionStatus?: "idle" | "running" | "success" | "error" // Make this optional
 }
 
 export function AIAssistanceTab({
@@ -28,7 +28,6 @@ export function AIAssistanceTab({
   const [fromCache, setFromCache] = useState(false)
   const [serverStatus, setServerStatus] = useState<"unknown" | "online" | "offline">("unknown")
   const [explanationServerStatus, setExplanationServerStatus] = useState<"unknown" | "online" | "offline">("unknown")
-  const [correctionServerStatus, setCorrectionServerStatus] = useState<"unknown" | "online" | "offline">("unknown")
 
   // Cleanup function for EventSource
   useEffect(() => {
@@ -46,7 +45,6 @@ export function AIAssistanceTab({
   useEffect(() => {
     checkServerStatus()
     checkExplanationServerStatus()
-    checkCorrectionServerStatus()
   }, [])
 
   // Function to check if the code generation server is running
@@ -92,29 +90,6 @@ export function AIAssistanceTab({
     } catch (err) {
       setExplanationServerStatus("offline")
       console.error("Failed to connect to code explanation server:", err)
-    }
-  }
-
-  // Function to check if the correction server is running
-  const checkCorrectionServerStatus = async () => {
-    try {
-      const response = await fetch("http://localhost:3007/health", {
-        method: "GET",
-        headers: { Accept: "application/json" },
-        // Add a timeout to the fetch request
-        signal: AbortSignal.timeout(3000),
-      })
-
-      if (response.ok) {
-        setCorrectionServerStatus("online")
-        console.log("Code correction server is online")
-      } else {
-        setCorrectionServerStatus("offline")
-        console.error("Code correction server returned an error")
-      }
-    } catch (err) {
-      setCorrectionServerStatus("offline")
-      console.error("Failed to connect to code correction server:", err)
     }
   }
 
@@ -353,114 +328,27 @@ export function AIAssistanceTab({
 
   // Function to handle bug fixing
   const handleBugFixing = async () => {
-    // If code is empty or just placeholder, show error
-    if (!code || code.trim() === "" || code.includes("Write your function here")) {
-      setError("No code to fix. Please write or generate some code first.")
-      return
-    }
-
-    // If server is offline, try to check status first
-    if (correctionServerStatus === "offline") {
-      await checkCorrectionServerStatus()
-
-      // If still offline, show error
-      if (correctionServerStatus === "offline") {
-        setError("Code correction server is offline. Please start the server and try again.")
-        return
-      }
-    }
-
     setIsLoading(true)
     setActiveButton("bugfix")
     setError(null)
-    setStreamingContent("")
-    setResponseContent("")
-    setFromCache(false)
 
+    // This would be implemented when the bug fixing server is ready
     try {
-      // Create the URL for the correction endpoint
-      const url = `http://localhost:3007/correct-stream`
-      console.log(`Requesting code correction from: ${url}`)
-
-      // Make a POST request to the correction server
-      const response = await fetch(url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          code: code,
-          language: selectedLanguage.name,
-          index: currentQuestionIndex,
-        }),
-      })
-
-      if (!response.body) {
-        throw new Error("Response body is null")
-      }
-
-      // Get a reader from the response body
-      const reader = response.body.getReader()
-      let accumulatedCorrection = ""
-      const decoder = new TextDecoder()
-      let buffer = ""
-
-      // Process the stream
-      while (true) {
-        const { done, value } = await reader.read()
-        if (done) break
-
-        // Decode the chunk and add it to the buffer
-        buffer += decoder.decode(value, { stream: true })
-
-        // Process complete SSE events in the buffer
-        const events = buffer.split("\n\n")
-        buffer = events.pop() || "" // Keep the last incomplete event in the buffer
-
-        for (const event of events) {
-          const lines = event.split("\n")
-          const eventType = lines[0].startsWith("event: ") ? lines[0].slice(7) : ""
-          const data = lines[1]?.startsWith("data: ") ? lines[1].slice(6) : ""
-
-          if (eventType && data) {
-            try {
-              const parsedData = JSON.parse(data)
-
-              if (eventType === "metadata") {
-                setFromCache(parsedData.fromCache || false)
-              } else if (eventType === "data" && parsedData.correction) {
-                accumulatedCorrection += parsedData.correction
-                setStreamingContent(accumulatedCorrection)
-              } else if (eventType === "complete") {
-                // Finalize the response
-                setResponseContent(accumulatedCorrection)
-                setStreamingContent("")
-                setIsLoading(false)
-              } else if (eventType === "error") {
-                throw new Error(parsedData.error || "Unknown error")
-              }
-            } catch (error) {
-              console.error("Error parsing SSE data:", error)
-            }
-          }
-        }
-      }
+      // Placeholder for future implementation
+      setResponseContent("Bug fixing feature will be implemented soon.")
     } catch (err) {
-      console.error("Error fixing code:", err)
-      setError(err instanceof Error ? err.message : "Failed to fix code")
+      console.error("Error fixing bugs:", err)
+      setError(err instanceof Error ? err.message : "Failed to fix bugs")
       setResponseContent("")
+    } finally {
       setIsLoading(false)
-      setStreamingContent("")
-      setCorrectionServerStatus("offline")
     }
   }
 
   // Function to apply generated code to the code playground
   const applyToCodePlayground = () => {
-    if (responseContent || streamingContent) {
-      if (activeButton === "generation" || activeButton === "bugfix") {
-        setCode(responseContent || streamingContent)
-      }
+    if ((responseContent || streamingContent) && activeButton === "generation") {
+      setCode(responseContent || streamingContent)
     }
   }
 
@@ -474,7 +362,7 @@ export function AIAssistanceTab({
     setFromCache(false)
 
     try {
-      // Test all servers
+      // Test both servers
       const codeGenResponse = await fetch("http://localhost:3004/health", {
         method: "GET",
         headers: { Accept: "application/json" },
@@ -482,12 +370,6 @@ export function AIAssistanceTab({
       })
 
       const explanationResponse = await fetch("http://localhost:3006/health", {
-        method: "GET",
-        headers: { Accept: "application/json" },
-        signal: AbortSignal.timeout(3000),
-      })
-
-      const correctionResponse = await fetch("http://localhost:3007/health", {
         method: "GET",
         headers: { Accept: "application/json" },
         signal: AbortSignal.timeout(3000),
@@ -505,27 +387,15 @@ export function AIAssistanceTab({
         setExplanationServerStatus("offline")
       }
 
-      if (correctionResponse.ok) {
-        setCorrectionServerStatus("online")
-      } else {
-        setCorrectionServerStatus("offline")
-      }
-
       // Set response based on server status
-      const onlineServers = [
-        serverStatus === "online" ? "Code Generation" : null,
-        explanationServerStatus === "online" ? "Code Explanation" : null,
-        correctionServerStatus === "online" ? "Bug Fixing" : null,
-      ].filter(Boolean)
-
-      if (onlineServers.length === 3) {
+      if (serverStatus === "online" && explanationServerStatus === "online") {
         setResponseContent("All servers are online! You can use all AI assistance features.")
-      } else if (onlineServers.length > 0) {
-        setResponseContent(
-          `The following servers are online: ${onlineServers.join(", ")}. Other features may not be available.`,
-        )
+      } else if (serverStatus === "online") {
+        setResponseContent("Code generation server is online, but explanation server is offline.")
+      } else if (explanationServerStatus === "online") {
+        setResponseContent("Explanation server is online, but code generation server is offline.")
       } else {
-        setError("All servers are offline. Please start the servers and try again.")
+        setError("Both servers are offline. Please start the servers and try again.")
       }
     } catch (err) {
       console.error("Error testing connection:", err)
@@ -535,36 +405,17 @@ export function AIAssistanceTab({
     }
   }
 
-  // Determine if any server is offline
-  const anyServerOffline =
-    serverStatus === "offline" || explanationServerStatus === "offline" || correctionServerStatus === "offline"
-
   return (
-    <div className="flex flex-col h-full">
-      {anyServerOffline && (
+    <div className="flex flex-col h-full overflow-auto">
+      {(serverStatus === "offline" || explanationServerStatus === "offline") && (
         <Alert variant="destructive" className="mb-4">
           <AlertTriangle className="h-4 w-4 mr-2" />
-          <AlertDescription>
-            {[
-              serverStatus === "offline" ? "Code generation" : null,
-              explanationServerStatus === "offline" ? "Code explanation" : null,
-              correctionServerStatus === "offline" ? "Bug fixing" : null,
-            ]
-              .filter(Boolean)
-              .join(", ")}{" "}
-            server
-            {anyServerOffline &&
-            [serverStatus, explanationServerStatus, correctionServerStatus].filter((status) => status === "offline")
-              .length > 1
-              ? "s are"
-              : " is"}{" "}
-            offline. Please start the server
-            {anyServerOffline &&
-            [serverStatus, explanationServerStatus, correctionServerStatus].filter((status) => status === "offline")
-              .length > 1
-              ? "s"
-              : ""}{" "}
-            and try again.
+          <AlertDescription className="text-[13px]">
+            {serverStatus === "offline" && explanationServerStatus === "offline"
+              ? "AI assistance servers are offline. Please start the servers and try again."
+              : serverStatus === "offline"
+                ? "Code generation server is offline. Please start the server and try again."
+                : "Code explanation server is offline. Please start the server and try again."}
           </AlertDescription>
         </Alert>
       )}
@@ -601,7 +452,7 @@ export function AIAssistanceTab({
         </Button>
       </div>
 
-      {anyServerOffline && (
+      {(serverStatus === "offline" || explanationServerStatus === "offline") && (
         <Button variant="outline" size="sm" className="mb-4 w-full" onClick={handleTestConnection} disabled={isLoading}>
           Test Server Connection
         </Button>
@@ -612,20 +463,18 @@ export function AIAssistanceTab({
           <div className="flex flex-col h-full">
             <div className="flex items-center gap-2 mb-4">
               <RefreshCw className="h-4 w-4 animate-spin" />
-              <span className="text-sm">
+              <span className="text-[13px]">
                 {activeButton === "generation"
                   ? "Generating code..."
                   : activeButton === "explanation"
                     ? "Explaining code..."
-                    : activeButton === "bugfix"
-                      ? "Fixing code..."
-                      : "Processing..."}
+                    : "Fixing bugs..."}
               </span>
             </div>
 
             {streamingContent && (
               <div className="flex-1 overflow-auto">
-                <pre className="whitespace-pre-wrap font-mono text-sm p-4 bg-muted rounded-md">{streamingContent}</pre>
+                <pre className="whitespace-pre-wrap font-mono text-[13px] p-4 bg-muted rounded-md">{streamingContent}</pre>
               </div>
             )}
           </div>
@@ -635,12 +484,12 @@ export function AIAssistanceTab({
           </Alert>
         ) : responseContent ? (
           <div className="flex flex-col h-full">
-            {fromCache && <p className="text-xs text-muted-foreground italic mb-2">Using cached response</p>}
+            {fromCache && <p className="text-[11px] text-muted-foreground italic mb-2">Using cached response</p>}
             <div className="flex-1 overflow-auto">
-              <pre className="whitespace-pre-wrap font-mono text-sm p-4 bg-muted rounded-md">{responseContent}</pre>
+              <pre className="whitespace-pre-wrap font-mono text-[13px] p-4 bg-muted rounded-md">{responseContent}</pre>
             </div>
 
-            {(activeButton === "generation" || activeButton === "bugfix") && (
+            {activeButton === "generation" && (
               <div className="mt-4 flex justify-end">
                 <Button variant="outline" size="sm" onClick={applyToCodePlayground} className="flex items-center gap-1">
                   <Copy className="h-3 w-3" />
@@ -650,7 +499,7 @@ export function AIAssistanceTab({
             )}
           </div>
         ) : (
-          <div className="text-muted-foreground text-center h-full flex items-center justify-center">
+          <div className="text-[13px] text-muted-foreground text-center h-full flex items-center justify-center">
             {activeButton
               ? "No content to display. Try again or select a different option."
               : "Select an option above to get AI assistance"}

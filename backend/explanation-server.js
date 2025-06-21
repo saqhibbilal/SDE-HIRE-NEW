@@ -115,7 +115,7 @@ app.post("/explain-stream", async (req, res) => {
     res.write(`event: metadata\ndata: ${JSON.stringify({ fromCache: false })}\n\n`)
 
     // Import environment variables
-    const OLLAMA_API_URL = process.env.OLLAMA_API_URL || "http://localhost:11434"
+    const OLLAMA_API_URL = process.env.OLLAMA_API_URL || "http://127.0.0.1:11434"
     const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "codestral:latest"
 
     console.log(`Using Ollama API at: ${OLLAMA_API_URL}`)

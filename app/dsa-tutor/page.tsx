@@ -5,7 +5,14 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
+//import { Button } from "@/components/ui/button"
 import { AuthLayout } from "@/components/layout/auth-layout"
+
+import {
+  Panel,
+  PanelGroup,
+  PanelResizeHandle,
+} from "react-resizable-panels";
 
 import questionsData from "./questions.json"
 import { languages } from "./languages"
@@ -19,8 +26,8 @@ import { CodeAssistance } from "./components/code-assistance"
 import { CodeEditorSection } from "./components/code-editor-section"
 import { OutputSection } from "./components/output-section"
 import { useProgress } from "@/lib/context/progress-context"
-
 import "./dsa-tutor.css"
+
 
 // Error boundary for ResizeObserver errors
 const errorHandler = (e: ErrorEvent) => {
@@ -90,6 +97,19 @@ export default function DSATutorPage() {
     isLoading: false,
     fromCache: false,
   })
+
+//This is new code 
+
+  const [collapse, setCollapse] = useState({
+    challenge: false,
+    assistance: false,
+    editor: false,
+    output: false,
+  })
+
+  const resetLayout = () => {
+    setCollapse({ challenge: false, assistance: false, editor: false, output: false })
+  }
 
   // Add error handler for ResizeObserver errors
   useEffect(() => {
@@ -802,11 +822,8 @@ export default function DSATutorPage() {
 
   return (
     <AuthLayout>
-      <div className="flex flex-col h-[calc(100vh-8.5rem)] bg-background">
-        {/* DSA Tutor Specific Header */}
-        <div className="border-b bg-background z-10 h-14">
-          <div className="flex h-full items-center px-4">
-            {/* Problem Header with Language Selection */}
+      <div className="flex flex-col h-screen ">
+        <div className="border-b h-14 px-4 flex items-center justify-between bg-background sticky top-0 z-10">
             <ProblemHeader
               questions={questions}
               currentQuestionIndex={currentQuestionIndex}
@@ -816,35 +833,51 @@ export default function DSATutorPage() {
               selectedLanguage={selectedLanguage}
               handleLanguageChange={handleLanguageChange}
             />
-          </div>
         </div>
 
         {/* Main Content */}
         <div className="flex flex-1 overflow-hidden dsa-layout">
           {questions.length > 0 && currentQuestion ? (
-            <>
+            <PanelGroup direction="horizontal" className="flex flex-1"> 
               {/* Left Panel - Split into Challenge and Code Assistance */}
-              <div className="w-[45%] border-r flex flex-col dsa-left-panel">
-                {/* Challenge Description - Top Half */}
-                <ChallengeDescription
-                  currentQuestion={currentQuestion}
-                  currentQuestionIndex={currentQuestionIndex}
-                  challengeHeight={challengeHeight}
-                />
+               <Panel defaultSize={45} minSize={40} maxSize={70}>
+  <div className="w-full h-full border-r dsa-left-panel">
+    <PanelGroup direction="vertical" className="h-full">
+      <Panel defaultSize={50} minSize={20}>
+        <div className="h-full">
+          <ChallengeDescription
+            currentQuestion={currentQuestion}
+            currentQuestionIndex={currentQuestionIndex}
+            challengeHeight={challengeHeight}
+          />
+        </div>
+      </Panel>
+      <PanelResizeHandle className="h-1 bg-muted hover:bg-primary transition cursor-row-resize" />
+      <Panel defaultSize={50} minSize={60}>
+        <div className="h-full flex flex-col">
+          <CodeAssistance
+            assistanceHeight={assistanceHeight}
+            problemAssistance={problemAssistance}
+            fetchProblemAssistance={fetchProblemAssistance}
+            refreshExplanation={refreshExplanation}
+            currentQuestionIndex={currentQuestionIndex}
+            selectedLanguage={selectedLanguage}
+            setCode={setCode}
+            code={code}
+            executionStatus={executionStatus}
+          />
+        </div>
+      </Panel>
+    </PanelGroup>
+  </div>
+</Panel>
 
-                {/* Code Assistance - Bottom Half */}
-                <CodeAssistance
-                  assistanceHeight={assistanceHeight}
-                  problemAssistance={problemAssistance}
-                  fetchProblemAssistance={fetchProblemAssistance}
-                  refreshExplanation={refreshExplanation}
-                  currentQuestionIndex={currentQuestionIndex}
-                  selectedLanguage={selectedLanguage}
-                  setCode={setCode}
-                  code={code} // Pass the current code
-                  executionStatus={executionStatus} // Pass the execution status
-                />
-              </div>
+               
+
+
+
+              <PanelResizeHandle className="w-1 bg-muted hover:bg-primary transition cursor-col-resize" />
+              <Panel defaultSize={55} minSize={30}>
 
               {/* Right Panel - Code Editor and Output */}
               <div className="flex-1 flex flex-col dsa-right-panel">
@@ -901,7 +934,9 @@ export default function DSATutorPage() {
                   />
                 </div>
               </div>
-            </>
+              </Panel>
+    </PanelGroup>
+             
           ) : (
             <div className="flex items-center justify-center w-full">
               <Card className="w-[400px]">
