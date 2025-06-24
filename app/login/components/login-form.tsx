@@ -1,32 +1,34 @@
-"use client"
+'use client'
 
-import type React from "react"
-
-import { useState } from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Alert, AlertDescription } from "@/components/ui/alert"
-import { useAuth } from "@/lib/context/auth-context"
+import { useState } from 'react'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
+import { Alert, AlertDescription } from '@/components/ui/alert'
+import { useAuth } from '@/lib/context/auth-context'
 
 export function LoginForm() {
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(false)
-  const { state, login, clearError } = useAuth()
+  const { login, loading } = useAuth()
+  const [error, setError] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    await login(email, password)
+    const err = await login(email, password)
+   if (err) {
+  setError(err.message || 'Invalid credentials')
+   }
   }
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      {state.error && (
+      {error && (
         <Alert variant="destructive">
-          <AlertDescription>{state.error}</AlertDescription>
+          <AlertDescription>{error}</AlertDescription>
         </Alert>
       )}
 
@@ -39,7 +41,7 @@ export function LoginForm() {
           value={email}
           onChange={(e) => {
             setEmail(e.target.value)
-            if (state.error) clearError()
+            if (error) setError(null)
           }}
           required
         />
@@ -58,7 +60,7 @@ export function LoginForm() {
           value={password}
           onChange={(e) => {
             setPassword(e.target.value)
-            if (state.error) clearError()
+            if (error) setError(null)
           }}
           required
         />
@@ -71,12 +73,12 @@ export function LoginForm() {
         </Label>
       </div>
 
-      <Button className="w-full" size="lg" type="submit" disabled={state.isLoading}>
-        {state.isLoading ? "Signing in..." : "Sign in"}
+      <Button className="w-full" size="lg" type="submit" disabled={loading}>
+        {loading ? 'Signing in...' : 'Sign in'}
       </Button>
 
       <div className="text-center text-sm">
-        Don't have an account?{" "}
+        Don't have an account?{' '}
         <Link href="/signup" className="text-primary hover:underline">
           Sign up
         </Link>
@@ -84,3 +86,4 @@ export function LoginForm() {
     </form>
   )
 }
+ 

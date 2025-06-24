@@ -1,5 +1,6 @@
 "use client"
 
+import { useRouter } from "next/navigation"
 import type { ReactNode } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
@@ -21,11 +22,22 @@ import { useAuth } from "@/lib/context/auth-context"
 interface AuthLayoutProps {
   children: ReactNode
 }
+ 
 
 export function AuthLayout({ children }: AuthLayoutProps) {
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { state, logout } = useAuth()
+  const { user, logout } = useAuth()
+  
+  //const { state, logout } = useAuth()
+  const router = useRouter()
+
+useEffect(() => {
+  if (!user) {
+    router.push("/login")
+  }
+}, [user])
+
 
   // Close sidebar when route changes (especially on mobile)
   useEffect(() => {
@@ -156,7 +168,10 @@ export function AuthLayout({ children }: AuthLayoutProps) {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-1">
                     <User className="h-4 w-4" />
-                    {state.user?.name || "Account"}
+                            {/* modified code
+                    {state.user?.name || "Account"} 
+                    */}
+                    {user?.email || "Account"}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">

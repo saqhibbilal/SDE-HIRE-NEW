@@ -28,3 +28,6 @@ next-env.d.ts
 
 # editor
 /.vscode/
+
+# Ignore local environment variables file
+.env.local

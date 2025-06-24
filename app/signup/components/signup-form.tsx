@@ -1,26 +1,45 @@
-"use client"
+'use client'
 
-import type React from "react"
-
-import { useState } from "react"
-import Link from "next/link"
-import { Button } from "@/components/ui/button"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
-import { Checkbox } from "@/components/ui/checkbox"
+import { useState } from 'react'
+import Link from 'next/link'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Checkbox } from '@/components/ui/checkbox'
+import { supabase } from '@/lib/supabase'
 
 export function SignupForm() {
-  const [firstName, setFirstName] = useState("")
-  const [lastName, setLastName] = useState("")
-  const [email, setEmail] = useState("")
-  const [password, setPassword] = useState("")
+  const [firstName, setFirstName] = useState('')
+  const [lastName, setLastName] = useState('')
+  const [email, setEmail] = useState('')
+  const [password, setPassword] = useState('')
   const [agreedToTerms, setAgreedToTerms] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [loading, setLoading] = useState(false)
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // In a real app, you would handle registration here
-    console.log("Signup attempt with:", { firstName, lastName, email, password, agreedToTerms })
-    window.location.href = "/dashboard"
+    setError(null)
+    setLoading(true)
+
+    const { error } = await supabase.auth.signUp({
+      email,
+      password,
+      options: {
+        data: {
+          first_name: firstName,
+          last_name: lastName,
+        },
+      },
+    })
+
+    setLoading(false)
+
+    if (error) {
+      setError(error.message)
+    } else {
+      window.location.href = '/dashboard'
+    }
   }
 
   return (
@@ -73,21 +92,25 @@ export function SignupForm() {
           required
         />
         <Label htmlFor="terms" className="text-sm font-normal">
-          I agree to the{" "}
+          I agree to the{' '}
           <Link href="/terms" className="text-primary hover:underline">
             Terms of Service
-          </Link>{" "}
-          and{" "}
+          </Link>{' '}
+          and{' '}
           <Link href="/privacy" className="text-primary hover:underline">
             Privacy Policy
           </Link>
         </Label>
       </div>
-      <Button className="w-full" size="lg" type="submit">
-        Create account
+
+      {error && <p className="text-red-500 text-sm">{error}</p>}
+
+      <Button className="w-full" size="lg" type="submit" disabled={loading}>
+        {loading ? 'Creating account...' : 'Create account'}
       </Button>
+
       <div className="text-center text-sm">
-        Already have an account?{" "}
+        Already have an account?{' '}
         <Link href="/login" className="text-primary hover:underline">
           Sign in
         </Link>
@@ -95,3 +118,5 @@ export function SignupForm() {
     </form>
   )
 }
+
+ 
