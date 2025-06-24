@@ -27,16 +27,17 @@ interface AuthLayoutProps {
 export function AuthLayout({ children }: AuthLayoutProps) {
   const pathname = usePathname()
   const [sidebarOpen, setSidebarOpen] = useState(false)
-  const { user, logout } = useAuth()
+  const { user, loading, logout } = useAuth() // Add loading here
+  //const { user, logout } = useAuth()
   
   //const { state, logout } = useAuth()
   const router = useRouter()
 
 useEffect(() => {
-  if (!user) {
-    router.push("/login")
-  }
-}, [user])
+    if (!loading && !user) { // Only redirect if not loading and no user
+      router.push("/login")
+    }
+  }, [user, loading, router]) // Add loading and router to dependencies
 
 
   // Close sidebar when route changes (especially on mobile)

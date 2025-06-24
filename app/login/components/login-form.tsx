@@ -19,9 +19,9 @@ export function LoginForm() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     const err = await login(email, password)
-   if (err) {
+if (err) {
   setError(err.message || 'Invalid credentials')
-   }
+}
   }
 
   return (
@@ -86,4 +86,8 @@ export function LoginForm() {
     </form>
   )
 }
+
+
+
+
  
