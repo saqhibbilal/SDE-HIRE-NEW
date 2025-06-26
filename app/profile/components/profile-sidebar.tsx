@@ -8,7 +8,7 @@ import { useAuth } from "@/lib/context/auth-context"
 import { useProgress } from "@/lib/context/progress-context"
 
 export function ProfileSidebar() {
-  const { state: authState } = useAuth()
+  const { user } = useAuth()
   const { state: progressState } = useProgress()
 
   // Get total problems count from questions.json
@@ -20,11 +20,20 @@ export function ProfileSidebar() {
       <CardContent className="p-6">
         <div className="flex flex-col items-center">
           <Avatar className="h-24 w-24 mb-4">
-            <AvatarImage src={authState.user?.avatar || "/abstract-geometric-shapes.png"} alt="User" />
-            <AvatarFallback>{authState.user?.name?.[0] || "U"}</AvatarFallback>
+            <AvatarImage
+              src={user?.user_metadata?.avatar || "/abstract-geometric-shapes.png"}
+              alt="User"
+            />
+            <AvatarFallback>
+              {user?.user_metadata?.full_name?.[0] || "U"}
+            </AvatarFallback>
           </Avatar>
-          <h2 className="text-2xl font-bold mb-1">{authState.user?.name || "Guest User"}</h2>
-          <p className="text-muted-foreground mb-4">{authState.user?.role || "Software Engineer"}</p>
+          <h2 className="text-2xl font-bold mb-1">
+            {user?.user_metadata?.full_name || "Guest User"}
+          </h2>
+          <p className="text-muted-foreground mb-4">
+            {user?.user_metadata?.role || "Software Engineer"}
+          </p>
 
           <div className="w-full mt-4 space-y-4">
             <div>
@@ -61,7 +70,9 @@ export function ProfileSidebar() {
               <div className="flex flex-col items-center p-3 bg-muted rounded-md">
                 <Award className="h-5 w-5 mb-1 text-primary" />
                 <span className="text-sm font-medium">Rank</span>
-                <span className="text-lg font-bold">{progressState.totalSolved > 0 ? "Beginner" : "-"}</span>
+                <span className="text-lg font-bold">
+                  {progressState.totalSolved > 0 ? "Beginner" : "-"}
+                </span>
               </div>
 
               <div className="flex flex-col items-center p-3 bg-muted rounded-md">
@@ -76,3 +87,7 @@ export function ProfileSidebar() {
     </Card>
   )
 }
+
+
+
+ 
