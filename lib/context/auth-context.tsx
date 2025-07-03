@@ -1,3 +1,4 @@
+
 'use client'
 
 import { createContext, useContext, useEffect, useState } from 'react'
@@ -76,3 +77,4 @@ export const useAuth = () => {
   }
   return context
 }
+

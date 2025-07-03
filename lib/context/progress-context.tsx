@@ -1,10 +1,11 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useReducer, useEffect } from "react"
+import { createContext, useContext, useReducer, useEffect, useCallback } from "react"
+import { useAuth } from "@/lib/context/auth-context"
+import { supabase } from "@/lib/supabase"
 import type { Question } from "@/app/dsa-tutor/types"
 
-// Define types
 type ProblemStatus = "unsolved" | "solved" | "attempted"
 
 type ProblemProgress = {
@@ -39,7 +40,6 @@ type ProgressContextType = {
   getProgressByDifficulty: (difficulty: string) => { solved: number; total: number }
 }
 
-// Initial state
 const initialState: ProgressState = {
   problemsProgress: {},
   totalSolved: 0,
@@ -47,10 +47,8 @@ const initialState: ProgressState = {
   streak: 0,
 }
 
-// Create context
 const ProgressContext = createContext<ProgressContextType | undefined>(undefined)
 
-// Reducer function
 function progressReducer(state: ProgressState, action: ProgressAction): ProgressState {
   switch (action.type) {
     case "INIT_PROGRESS":
@@ -59,8 +57,6 @@ function progressReducer(state: ProgressState, action: ProgressAction): Progress
     case "MARK_SOLVED": {
       const { problemId } = action.payload
       const existingProgress = state.problemsProgress[problemId]
-
-      // Only count as newly solved if it wasn't already solved
       const isNewlySolved = !existingProgress || existingProgress.status !== "solved"
 
       return {
@@ -84,8 +80,6 @@ function progressReducer(state: ProgressState, action: ProgressAction): Progress
     case "MARK_ATTEMPTED": {
       const { problemId } = action.payload
       const existingProgress = state.problemsProgress[problemId]
-
-      // Only increment totalAttempted if this is the first attempt
       const isFirstAttempt = !existingProgress
 
       return {
@@ -106,32 +100,22 @@ function progressReducer(state: ProgressState, action: ProgressAction): Progress
     }
 
     case "UPDATE_STREAK": {
-      // Check if user was active today
       const today = new Date().toDateString()
       const lastActiveDate = state.lastActive ? new Date(state.lastActive).toDateString() : null
 
-      // If active today, streak continues
       if (lastActiveDate === today) {
         return state
       }
 
-      // If active yesterday, increment streak
       const yesterday = new Date()
       yesterday.setDate(yesterday.getDate() - 1)
       const yesterdayString = yesterday.toDateString()
 
       if (lastActiveDate === yesterdayString) {
-        return {
-          ...state,
-          streak: state.streak + 1,
-        }
+        return { ...state, streak: state.streak + 1 }
       }
 
-      // If not active yesterday or today, reset streak
-      return {
-        ...state,
-        streak: 0,
-      }
+      return { ...state, streak: 0 }
     }
 
     case "RESET_PROGRESS":
@@ -142,75 +126,92 @@ function progressReducer(state: ProgressState, action: ProgressAction): Progress
   }
 }
 
-// Provider component
 export function ProgressProvider({ children }: { children: React.ReactNode }) {
+  const { user } = useAuth()
   const [state, dispatch] = useReducer(progressReducer, initialState)
 
-  // Load progress from localStorage on mount
-  useEffect(() => {
-    const storedProgress = localStorage.getItem("problemsProgress")
-    if (storedProgress) {
-      try {
-        const parsedProgress = JSON.parse(storedProgress)
-        dispatch({ type: "INIT_PROGRESS", payload: parsedProgress })
-      } catch (error) {
-        console.error("Failed to parse stored progress:", error)
-      }
+  const loadProgress = useCallback(async () => {
+    if (!user) return
+
+    const { data, error } = await supabase
+      .from("users")
+      .select("progress")
+      .eq("id", user.id)
+      .single()
+
+    if (error) {
+      console.error("Error fetching progress:", error)
+      return
     }
 
-    // Update streak daily
-    dispatch({ type: "UPDATE_STREAK" })
+    if (data && data.progress) {
+      const safeProgress = {
+        problemsProgress: {},
+        totalSolved: 0,
+        totalAttempted: 0,
+        streak: 0,
+        ...data.progress, // If keys are missing, they will get default values
+      }
+      dispatch({ type: "INIT_PROGRESS", payload: safeProgress })
+    }
 
-    // Set up daily streak check
-    const intervalId = setInterval(
-      () => {
-        dispatch({ type: "UPDATE_STREAK" })
-      },
-      1000 * 60 * 60,
-    ) // Check every hour
+    dispatch({ type: "UPDATE_STREAK" })
+  }, [user])
+
+  useEffect(() => {
+    loadProgress()
+
+    const intervalId = setInterval(() => {
+      dispatch({ type: "UPDATE_STREAK" })
+    }, 1000 * 60 * 60)
 
     return () => clearInterval(intervalId)
-  }, [])
+  }, [loadProgress])
 
-  // Save progress to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem("problemsProgress", JSON.stringify(state))
-  }, [state])
+  const saveProgress = async (updatedState: ProgressState) => {
+    if (!user) return
 
-  // Mark a problem as solved
+    const { error } = await supabase
+      .from("users")
+      .update({ progress: updatedState })
+      .eq("id", user.id)
+
+    if (error) {
+      console.error("Error saving progress:", error)
+    }
+  }
+
   const markProblemSolved = (problemId: number) => {
+    const updatedState = progressReducer(state, { type: "MARK_SOLVED", payload: { problemId } })
     dispatch({ type: "MARK_SOLVED", payload: { problemId } })
+    saveProgress(updatedState)
   }
 
-  // Mark a problem as attempted
   const markProblemAttempted = (problemId: number) => {
+    const updatedState = progressReducer(state, { type: "MARK_ATTEMPTED", payload: { problemId } })
     dispatch({ type: "MARK_ATTEMPTED", payload: { problemId } })
+    saveProgress(updatedState)
   }
 
-  // Reset all progress
   const resetProgress = () => {
     dispatch({ type: "RESET_PROGRESS" })
+    saveProgress(initialState)
   }
 
-  // Get the status of a specific problem
   const getProblemStatus = (problemId: number): ProblemStatus => {
     return state.problemsProgress[problemId]?.status || "unsolved"
   }
 
-  // Get progress statistics by difficulty
   const getProgressByDifficulty = (difficulty: string) => {
-    // This would typically fetch problems from an API or context
-    // For now, we'll import from the questions.json directly
     const questions = require("@/app/dsa-tutor/questions.json") as Question[]
+    const problemsByDifficulty = questions.filter(
+      (q) => q.difficulty.toLowerCase() === difficulty.toLowerCase(),
+    )
+    const solvedCount = problemsByDifficulty.filter(
+      (q) => state.problemsProgress[q.id]?.status === "solved",
+    ).length
 
-    const problemsByDifficulty = questions.filter((q) => q.difficulty.toLowerCase() === difficulty.toLowerCase())
-
-    const solvedCount = problemsByDifficulty.filter((q) => state.problemsProgress[q.id]?.status === "solved").length
-
-    return {
-      solved: solvedCount,
-      total: problemsByDifficulty.length,
-    }
+    return { solved: solvedCount, total: problemsByDifficulty.length }
   }
 
   return (
@@ -229,7 +230,6 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
   )
 }
 
-// Custom hook to use the progress context
 export function useProgress() {
   const context = useContext(ProgressContext)
   if (context === undefined) {
