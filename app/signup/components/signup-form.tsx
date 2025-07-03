@@ -1,4 +1,3 @@
-// signup-form.tsx
 'use client'
 
 import { useState, useEffect } from 'react'
@@ -40,6 +39,7 @@ export function SignupForm() {
         data: {
           first_name: firstName,
           last_name: lastName,
+          display_name: `${firstName} ${lastName}`,
         },
       },
     })
@@ -157,4 +157,3 @@ export function SignupForm() {
     </form>
   )
 }
- 
