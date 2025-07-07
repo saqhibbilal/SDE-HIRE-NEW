@@ -5,20 +5,14 @@ import { Switch } from "@/components/ui/switch"
 import { Label } from "@/components/ui/label"
 import { Card } from "@/components/ui/card"
 import { Skeleton } from "@/components/ui/skeleton"
-//import { Button } from "@/components/ui/button"
 import { AuthLayout } from "@/components/layout/auth-layout"
-
+import { supabase } from "@/lib/supabase"
 import {
   Panel,
   PanelGroup,
   PanelResizeHandle,
 } from "react-resizable-panels";
 
-import questionsData from "./questions.json"
-import { languages } from "./languages"
-import type { Question, ExecutionResult, ProblemAssistance } from "./types"
-
-// Import components
 import { ProblemHeader } from "./components/problem-header"
 import { CodeActions } from "./components/code-actions"
 import { ChallengeDescription } from "./components/challenge-description"
@@ -27,7 +21,8 @@ import { CodeEditorSection } from "./components/code-editor-section"
 import { OutputSection } from "./components/output-section"
 import { useProgress } from "@/lib/context/progress-context"
 import "./dsa-tutor.css"
-
+import { languages } from "./languages"
+import type { Question, ExecutionResult, ProblemAssistance } from "./types"
 
 // Error boundary for ResizeObserver errors
 const errorHandler = (e: ErrorEvent) => {
@@ -98,18 +93,12 @@ export default function DSATutorPage() {
     fromCache: false,
   })
 
-//This is new code 
-
   const [collapse, setCollapse] = useState({
     challenge: false,
     assistance: false,
     editor: false,
     output: false,
   })
-
-  const resetLayout = () => {
-    setCollapse({ challenge: false, assistance: false, editor: false, output: false })
-  }
 
   // Add error handler for ResizeObserver errors
   useEffect(() => {
@@ -136,9 +125,22 @@ export default function DSATutorPage() {
     return () => window.removeEventListener("resize", updateDimensions)
   }, [])
 
+  // Fetch problems from Supabase
   useEffect(() => {
-    // Load questions from the JSON file
-    setQuestions(questionsData as Question[])
+    const fetchProblems = async () => {
+      const { data, error } = await supabase
+        .from("problems")
+        .select("*")
+        .order("id", { ascending: true })
+
+      if (error) {
+        console.error("Error fetching problems:", error)
+      } else {
+        setQuestions(data)
+      }
+    }
+
+    fetchProblems()
   }, [])
 
   useEffect(() => {
@@ -557,7 +559,7 @@ export default function DSATutorPage() {
 
     // Get the input to use
     const currentQuestion = questions[currentQuestionIndex]
-    const inputToUse = useCustomInput ? customInput : currentQuestion.sample_input
+    const inputToUse = useCustomInput ? customInput : currentQuestion.test_cases.sample_input
 
     // Show what's being compiled
     const sourceCode = editorRef.current.getValue()
@@ -598,7 +600,7 @@ export default function DSATutorPage() {
           setOutput(result.stdout || "")
         } else {
           // For sample input, check against expected output
-          const expectedOutput = currentQuestion.sample_output
+          const expectedOutput = currentQuestion.test_cases.sample_output
           const actualOutput = result.stdout || ""
 
           // Normalize both outputs for comparison
@@ -624,7 +626,7 @@ export default function DSATutorPage() {
           setOutput(result.stdout || "")
         } else {
           // For sample input, check against expected output
-          const expectedOutput = currentQuestion.sample_output
+          const expectedOutput = currentQuestion.test_cases.sample_output
           const actualOutput = result.stdout || ""
 
           // Normalize both outputs for comparison
@@ -707,15 +709,15 @@ export default function DSATutorPage() {
 
       // Prepare test cases with hidden inputs and outputs
       const testCases = [
-        {
-          input: String(currentQuestion.sample_input),
-          expected_output: String(currentQuestion.sample_output),
-        },
-        ...currentQuestion.hidden_inputs.map((input, index) => ({
-          input: String(input),
-          expected_output: String(currentQuestion.hidden_outputs[index]),
-        })),
-      ]
+  {
+    input: String(currentQuestion.test_cases.sample_input),
+    expected_output: String(currentQuestion.test_cases.sample_output),
+  },
+  ...currentQuestion.test_cases.hidden_inputs.map((input: string, index: number) => ({
+    input: String(input),
+    expected_output: String(currentQuestion.test_cases.hidden_outputs[index]),
+  })),
+]
 
       // Call our API route with multiple test cases
       const response = await fetch("/api/execute", {

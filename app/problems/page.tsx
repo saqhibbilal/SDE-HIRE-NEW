@@ -1,23 +1,45 @@
 "use client"
 
-import { useState } from "react"
+import { useEffect, useState } from "react"
 import { AuthLayout } from "@/components/layout/auth-layout"
 import { ProblemHeader } from "./components/problem-header"
 import { ProblemFilters } from "./components/problem-filters"
 import { ProblemList } from "./components/problem-list"
+import { supabase } from "@/lib/supabase"
 
-// Import questions from the DSA tutor
-import questionsData from "../dsa-tutor/questions.json"
+type Problem = {
+  id: number
+  title: string
+  description: string
+  difficulty: string
+}
 
 export default function ProblemsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [difficultyFilter, setDifficultyFilter] = useState("all")
+  const [problems, setProblems] = useState<Problem[]>([])
 
-  // Filter questions based on search query and difficulty
-  const filteredQuestions = questionsData.filter((question) => {
-    const matchesSearch = question.title.toLowerCase().includes(searchQuery.toLowerCase())
+  useEffect(() => {
+    const fetchProblems = async () => {
+      const { data, error } = await supabase
+        .from("problems")
+        .select("id, title, description, difficulty")
+        .order("id", { ascending: true })
+
+      if (error) {
+        console.error("Error fetching problems:", error)
+      } else {
+        setProblems(data)
+      }
+    }
+
+    fetchProblems()
+  }, [])
+
+  const filteredProblems = problems.filter((problem) => {
+    const matchesSearch = problem.title.toLowerCase().includes(searchQuery.toLowerCase())
     const matchesDifficulty =
-      difficultyFilter === "all" || question.difficulty.toLowerCase() === difficultyFilter.toLowerCase()
+      difficultyFilter === "all" || problem.difficulty.toLowerCase() === difficultyFilter.toLowerCase()
     return matchesSearch && matchesDifficulty
   })
 
@@ -33,7 +55,7 @@ export default function ProblemsPage() {
           setDifficultyFilter={setDifficultyFilter}
         />
 
-        <ProblemList filteredQuestions={filteredQuestions} />
+        <ProblemList filteredQuestions={filteredProblems} />
       </div>
     </AuthLayout>
   )

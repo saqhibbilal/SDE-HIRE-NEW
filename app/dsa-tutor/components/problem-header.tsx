@@ -5,7 +5,7 @@ import { Separator } from "@/components/ui/separator"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
 import { List, ChevronLeft, ChevronRight, CheckCircle, Code } from "lucide-react"
-import type { Question, Language } from "../types"
+import type { Question, Language } from "../types" 
 import { useProgress } from "@/lib/context/progress-context"
 import { languages } from "../languages"
 

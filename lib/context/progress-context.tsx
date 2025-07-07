@@ -1,7 +1,7 @@
 "use client"
 
 import type React from "react"
-import { createContext, useContext, useReducer, useEffect, useCallback } from "react"
+import { createContext, useContext, useReducer, useEffect, useCallback, useState } from "react"
 import { useAuth } from "@/lib/context/auth-context"
 import { supabase } from "@/lib/supabase"
 import type { Question } from "@/app/dsa-tutor/types"
@@ -129,6 +129,23 @@ function progressReducer(state: ProgressState, action: ProgressAction): Progress
 export function ProgressProvider({ children }: { children: React.ReactNode }) {
   const { user } = useAuth()
   const [state, dispatch] = useReducer(progressReducer, initialState)
+  const [problems, setProblems] = useState<Question[]>([])
+
+  // Fetch problems from Supabase
+  const loadProblems = useCallback(async () => {
+    const { data, error } = await supabase
+      .from("problems")
+      .select("id, difficulty")
+      .order("id", { ascending: true })
+
+    if (error) {
+      console.error("Error fetching problems:", error)
+      setProblems([])
+      return
+    }
+
+    setProblems(data as Question[])
+  }, [])
 
   const loadProgress = useCallback(async () => {
     if (!user) return
@@ -160,13 +177,14 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     loadProgress()
+    loadProblems()
 
     const intervalId = setInterval(() => {
       dispatch({ type: "UPDATE_STREAK" })
     }, 1000 * 60 * 60)
 
     return () => clearInterval(intervalId)
-  }, [loadProgress])
+  }, [loadProgress, loadProblems])
 
   const saveProgress = async (updatedState: ProgressState) => {
     if (!user) return
@@ -203,8 +221,7 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
   }
 
   const getProgressByDifficulty = (difficulty: string) => {
-    const questions = require("@/app/dsa-tutor/questions.json") as Question[]
-    const problemsByDifficulty = questions.filter(
+    const problemsByDifficulty = problems.filter(
       (q) => q.difficulty.toLowerCase() === difficulty.toLowerCase(),
     )
     const solvedCount = problemsByDifficulty.filter(

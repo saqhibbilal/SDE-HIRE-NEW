@@ -1,8 +1,14 @@
 import { ProblemCard } from "./problem-card"
-import type { Question } from "@/app/dsa-tutor/types"
+
+interface Problem {
+  id: number
+  title: string
+  description: string
+  difficulty: string
+}
 
 interface ProblemListProps {
-  filteredQuestions: Question[]
+  filteredQuestions: Problem[]
 }
 
 export function ProblemList({ filteredQuestions }: ProblemListProps) {
@@ -16,14 +22,14 @@ export function ProblemList({ filteredQuestions }: ProblemListProps) {
 
   return (
     <div className="space-y-4">
-      {filteredQuestions.map((question, index) => (
+      {filteredQuestions.map((problem, index) => (
         <ProblemCard
-          key={question.id}
-          id={question.id}
+          key={problem.id}
+          id={problem.id}
           index={index}
-          title={question.title}
-          difficulty={question.difficulty}
-          question={question.question}
+          title={problem.title}
+          difficulty={problem.difficulty}
+          question={problem.description}
         />
       ))}
     </div>
