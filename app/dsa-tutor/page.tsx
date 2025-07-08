@@ -12,6 +12,7 @@ import {
   PanelGroup,
   PanelResizeHandle,
 } from "react-resizable-panels";
+import { useSearchParams } from "next/navigation"
 
 import { ProblemHeader } from "./components/problem-header"
 import { CodeActions } from "./components/code-actions"
@@ -56,6 +57,7 @@ interface SubmissionResult {
 }
 
 export default function DSATutorPage() {
+  const searchParams = useSearchParams()
   const [questions, setQuestions] = useState<Question[]>([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [selectedLanguage, setSelectedLanguage] = useState(languages[0])
@@ -99,6 +101,18 @@ export default function DSATutorPage() {
     editor: false,
     output: false,
   })
+
+  // Set initial question index based on URL parameter
+  useEffect(() => {
+    const problemId = searchParams.get("problem")
+    if (problemId && questions.length > 0) {
+      const id = parseInt(problemId, 10)
+      const index = questions.findIndex((q) => q.id === id)
+      if (index !== -1) {
+        setCurrentQuestionIndex(index)
+      }
+    }
+  }, [searchParams, questions])
 
   // Add error handler for ResizeObserver errors
   useEffect(() => {
@@ -493,8 +507,6 @@ export default function DSATutorPage() {
 
   // Get Python template based on question ID
   const getPythonTemplate = (questionId: number): string => {
-    // This function is already defined in languages.ts
-    // We're just calling it here
     const template = languages.find((lang) => lang.name === "python")?.defaultCode || ""
     return template
   }
@@ -934,8 +946,9 @@ export default function DSATutorPage() {
                     customInput={customInput}
                     currentQuestion={currentQuestion}
                   />
+                  </div>
+
                 </div>
-              </div>
               </Panel>
     </PanelGroup>
              
