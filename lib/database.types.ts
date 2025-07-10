@@ -15,6 +15,24 @@ export interface Problem {
   tags: string[];
   created_at: string;
   updated_at: string;
+  metadata: {
+    tags: string[];
+    companies: string[];
+    topic_category: string;
+    subtopics: string[];
+    prerequisites: string[];
+    time_complexity: string;
+    space_complexity: string;
+    expected_solve_time_minutes: number;
+    common_approaches: string[];
+    common_mistakes: string[];
+    interview_frequency: string;
+    mastery_indicators: {
+      solve_time_threshold: number;
+      code_quality_patterns: string[];
+      optimization_awareness: string;
+    };
+  } | null;
 }
 
 export interface User {
@@ -32,6 +50,9 @@ export interface User {
         lastAttempted?: string;
         completedAt?: string;
         attempts: number;
+        codeLength?: number; // New: Number of non-empty lines in the submitted code
+        solveTime?: number; // New: Time taken to solve (in seconds)
+        errorCount?: number; // New: Number of failed submissions (compilation/runtime/wrong answer)
       }
     >;
     totalSolved: number;
