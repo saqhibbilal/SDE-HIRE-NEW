@@ -41,6 +41,13 @@ export interface User {
   last_name: string;
   display_name: string | null;
   role: string;
+  is_registered: boolean;
+  profile: {
+    experience_level: string;
+    target_companies: string[];
+    target_roles: string[];
+    preferred_languages: string[];
+  } | null;
   progress: {
     problemsProgress: Record<
       number,

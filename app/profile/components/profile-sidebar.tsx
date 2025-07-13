@@ -3,17 +3,66 @@
 import { Card, CardContent } from "@/components/ui/card"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { Separator } from "@/components/ui/separator"
-import { Award, Star } from "lucide-react"
+import { Badge } from "@/components/ui/badge"
+import { Award, Star, Building2, Briefcase, Code } from "lucide-react"
 import { useAuth } from "@/lib/context/auth-context"
 import { useProgress } from "@/lib/context/progress-context"
+import { useEffect, useState } from "react"
+import { supabase } from "@/lib/supabase"
+
+interface UserProfile {
+  experience_level: string
+  target_companies: string[]
+  target_roles: string[]
+  preferred_languages: string[]
+}
 
 export function ProfileSidebar() {
   const { user } = useAuth()
   const { state: progressState } = useProgress()
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null)
 
   // Get total problems count from questions.json
   const questions = require("@/app/dsa-tutor/questions.json")
   const totalProblems = questions.length
+
+  useEffect(() => {
+    const fetchUserProfile = async () => {
+      if (user?.id) {
+        const { data, error } = await supabase
+          .from('users')
+          .select('profile')
+          .eq('id', user.id)
+          .single()
+
+        if (!error && data?.profile) {
+          setUserProfile(data.profile)
+        }
+      }
+    }
+
+    fetchUserProfile()
+  }, [user?.id])
+
+  const getDisplayName = () => {
+    if (user?.user_metadata?.first_name && user?.user_metadata?.last_name) {
+      return `${user.user_metadata.first_name} ${user.user_metadata.last_name}`
+    }
+    if (user?.user_metadata?.display_name) {
+      return user.user_metadata.display_name
+    }
+    return user?.email || "Guest User"
+  }
+
+  const getInitials = () => {
+    if (user?.user_metadata?.first_name && user?.user_metadata?.last_name) {
+      return `${user.user_metadata.first_name[0]}${user.user_metadata.last_name[0]}`
+    }
+    if (user?.user_metadata?.display_name) {
+      return user.user_metadata.display_name.split(' ').map((n: string) => n[0]).join('').slice(0, 2)
+    }
+    return "U"
+  }
 
   return (
     <Card>
@@ -25,15 +74,17 @@ export function ProfileSidebar() {
               alt="User"
             />
             <AvatarFallback>
-              {user?.user_metadata?.full_name?.[0] || "U"}
+              {getInitials()}
             </AvatarFallback>
           </Avatar>
-          <h2 className="text-2xl font-bold mb-1">
-            {user?.user_metadata?.full_name || "Guest User"}
+          <h2 className="text-2xl font-bold mb-1 text-center">
+            {getDisplayName()}
           </h2>
-          <p className="text-muted-foreground mb-4">
-            {user?.user_metadata?.role || "Software Engineer"}
-          </p>
+          {userProfile?.experience_level && (
+            <p className="text-muted-foreground mb-4">
+              {userProfile.experience_level} Developer
+            </p>
+          )}
 
           <div className="w-full mt-4 space-y-4">
             <div>
@@ -65,6 +116,70 @@ export function ProfileSidebar() {
             </div>
 
             <Separator className="my-4" />
+
+            {/* Profile Information */}
+            {userProfile && (
+              <>
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Target Companies</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {userProfile.target_companies?.slice(0, 3).map((company) => (
+                      <Badge key={company} variant="secondary" className="text-xs">
+                        {company}
+                      </Badge>
+                    ))}
+                    {userProfile.target_companies?.length > 3 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{userProfile.target_companies.length - 3} more
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Briefcase className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Target Roles</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {userProfile.target_roles?.slice(0, 2).map((role) => (
+                      <Badge key={role} variant="secondary" className="text-xs">
+                        {role}
+                      </Badge>
+                    ))}
+                    {userProfile.target_roles?.length > 2 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{userProfile.target_roles.length - 2} more
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-3">
+                  <div className="flex items-center gap-2">
+                    <Code className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Languages</span>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {userProfile.preferred_languages?.slice(0, 3).map((language) => (
+                      <Badge key={language} variant="secondary" className="text-xs">
+                        {language}
+                      </Badge>
+                    ))}
+                    {userProfile.preferred_languages?.length > 3 && (
+                      <Badge variant="outline" className="text-xs">
+                        +{userProfile.preferred_languages.length - 3} more
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+
+                <Separator className="my-4" />
+              </>
+            )}
 
             <div className="grid grid-cols-2 gap-4">
               <div className="flex flex-col items-center p-3 bg-muted rounded-md">
