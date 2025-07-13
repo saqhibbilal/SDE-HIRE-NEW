@@ -57,7 +57,7 @@ export function ProblemHeader({
                 <span className="hidden sm:inline">Problem List</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuContent align="start" className="w-56 max-h-[280px] overflow-y-auto">
               {questions.map((question, index) => {
                 const status = getProblemStatus(question.id)
                 return (
