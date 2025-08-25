@@ -3,6 +3,14 @@ import { NextResponse } from 'next/server'
 import type { NextRequest } from 'next/server'
 
 export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl
+
+  // Skip middleware for DSA tutor routes to prevent auth token conflicts
+  // This allows client-side Supabase operations to work without interference
+  if (pathname.startsWith('/dsa-tutor')) {
+    return NextResponse.next()
+  }
+
   let response = NextResponse.next({
     request: {
       headers: req.headers,
@@ -57,22 +65,20 @@ export async function middleware(req: NextRequest) {
 
   // Refresh session if expired - required for Server Components
   const {
-    data: { session },
-  } = await supabase.auth.getSession()
-
-  const { pathname } = req.nextUrl
+    data: { user },
+  } = await supabase.auth.getUser()
 
   // Public routes that don't require authentication
   const publicRoutes = ['/', '/login', '/signup']
   const isPublicRoute = publicRoutes.includes(pathname)
 
   // If user is not authenticated and trying to access protected route
-  if (!session && !isPublicRoute) {
+  if (!user && !isPublicRoute) {
     return NextResponse.redirect(new URL('/login', req.url))
   }
 
   // If user is authenticated
-  if (session) {
+  if (user) {
     // If trying to access login/signup pages, redirect to dashboard
     if (pathname === '/login' || pathname === '/signup') {
       return NextResponse.redirect(new URL('/dashboard', req.url))
@@ -84,7 +90,7 @@ export async function middleware(req: NextRequest) {
         const { data: userData } = await supabase
           .from('users')
           .select('is_registered')
-          .eq('id', session.user.id)
+          .eq('id', user.id)
           .single()
 
         // If user is not registered and not on register page, redirect to register
@@ -117,4 +123,4 @@ export const config = {
      */
     '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
   ],
-} 
+}

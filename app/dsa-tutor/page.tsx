@@ -106,6 +106,9 @@ export default function DSATutorPage() {
     output: false,
   })
 
+  // User mode state for free/pro toggle
+  const [isProUser, setIsProUser] = useState(true)
+
   // Set initial question index based on URL parameter
   useEffect(() => {
     const problemId = searchParams.get("problem")
@@ -762,6 +765,8 @@ export default function DSATutorPage() {
             isMobile={isMobile}
             selectedLanguage={selectedLanguage}
             handleLanguageChange={handleLanguageChange}
+            isProUser={isProUser}
+            setIsProUser={setIsProUser}
           />
         </div>
 
@@ -770,32 +775,36 @@ export default function DSATutorPage() {
             <PanelGroup direction="horizontal" className="flex flex-1">
               <Panel defaultSize={45} minSize={40} maxSize={70}>
                 <div className="w-full h-full border-r dsa-left-panel">
-                  <PanelGroup direction="vertical" className="h-full">
-                    <Panel defaultSize={50} minSize={20}>
+                  <PanelGroup direction="vertical" className="h-full" key={isProUser ? 'pro' : 'free'}>
+                    <Panel defaultSize={isProUser ? 50 : 100} minSize={20}>
                       <div className="h-full">
                         <ChallengeDescription
                           currentQuestion={currentQuestion}
                           currentQuestionIndex={currentQuestionIndex}
-                          challengeHeight={challengeHeight}
+                          challengeHeight={isProUser ? challengeHeight : mainHeight}
                         />
                       </div>
                     </Panel>
-                    <PanelResizeHandle className="h-1 bg-muted hover:bg-primary transition cursor-row-resize" />
-                    <Panel defaultSize={50} minSize={60}>
-                      <div className="h-full flex flex-col">
-                        <CodeAssistance
-                          assistanceHeight={assistanceHeight}
-                          problemAssistance={problemAssistance}
-                          fetchProblemAssistance={fetchProblemAssistance}
-                          refreshExplanation={refreshExplanation}
-                          currentQuestionIndex={currentQuestionIndex}
-                          selectedLanguage={selectedLanguage}
-                          setCode={setCode}
-                          code={code}
-                          executionStatus={executionStatus}
-                        />
-                      </div>
-                    </Panel>
+                    {isProUser && (
+                      <>
+                        <PanelResizeHandle className="h-1 bg-muted hover:bg-primary transition cursor-row-resize" />
+                        <Panel defaultSize={50} minSize={60}>
+                          <div className="h-full flex flex-col">
+                            <CodeAssistance
+                              assistanceHeight={assistanceHeight}
+                              problemAssistance={problemAssistance}
+                              fetchProblemAssistance={fetchProblemAssistance}
+                              refreshExplanation={refreshExplanation}
+                              currentQuestionIndex={currentQuestionIndex}
+                              selectedLanguage={selectedLanguage}
+                              setCode={setCode}
+                              code={code}
+                              executionStatus={executionStatus}
+                            />
+                          </div>
+                        </Panel>
+                      </>
+                    )}
                   </PanelGroup>
                 </div>
               </Panel>

@@ -14,12 +14,21 @@ export function FeaturesSection() {
       />
 
       <FeatureCard
-        title="Problem List"
-        description="Browse our collection of coding problems"
-        content="Explore our curated collection of coding problems, ranging from easy to hard difficulty. Filter by topic, difficulty, or company to find the perfect problems for your practice."
+        title="Technical Interview Simulator"
+        description="Practice for your technical interviews with our interactive interview simulator"
+        content="Our technical interview simulator provides a realistic interview experience, including timed questions and feedback"
+        icon={<Code className="h-4 w-4" />}
+        linkHref="/technical-interview"
+        linkText="Start Interview"
+      />
+
+      <FeatureCard
+        title="HR interview Simulator"
+        description="Prepare for HR interviews with our interactive simulator"
+        content="Practice common HR interview questions and get feedback on your responses. Improve your communication skills and confidence for your next interview."
         icon={<BookOpen className="h-4 w-4" />}
-        linkHref="/problems"
-        linkText="Browse Problems"
+        linkHref="/hr-interview"
+        linkText="Start Interview"
       />
     </div>
   )

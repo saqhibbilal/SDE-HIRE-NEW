@@ -11,6 +11,7 @@ type AuthContextType = {
   isRegistered: boolean
   login: (email: string, password: string) => Promise<any>
   logout: () => Promise<void>
+  checkRegistrationStatus: () => Promise<void>
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -22,23 +23,29 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const router = useRouter()
 
   // Check if user is registered
-  const checkRegistrationStatus = async (userId: string) => {
+  const checkRegistrationStatus = async () => {
+    if (!user?.id) {
+      setIsRegistered(false)
+      return
+    }
+
     try {
       const { data, error } = await supabase
         .from('users')
         .select('is_registered')
-        .eq('id', userId)
+        .eq('id', user.id)
         .single()
 
       if (error) {
         console.error('Error checking registration status:', error)
-        return false
+        setIsRegistered(false)
+        return
       }
 
-      return data?.is_registered || false
+      setIsRegistered(data?.is_registered || false)
     } catch (error) {
       console.error('Error checking registration status:', error)
-      return false
+      setIsRegistered(false)
     }
   }
 
@@ -48,8 +55,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
       const { data, error } = await supabase.auth.getUser()
       if (data?.user) {
         setUser(data.user)
-        const registered = await checkRegistrationStatus(data.user.id)
-        setIsRegistered(registered)
+        // Check registration status after user is set
+        setTimeout(() => checkRegistrationStatus(), 100)
       }
       setLoading(false)
     }
@@ -57,12 +64,11 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
     getSession()
 
     const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
+      setUser(session?.user || null)
       if (session?.user) {
-        setUser(session.user)
-        const registered = await checkRegistrationStatus(session.user.id)
-        setIsRegistered(registered)
+        // Check registration status when auth state changes
+        setTimeout(() => checkRegistrationStatus(), 100)
       } else {
-        setUser(null)
         setIsRegistered(false)
       }
     })
@@ -78,22 +84,30 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 
     if (!error) {
       const { data } = await supabase.auth.getUser()
-      if (data?.user) {
-        setUser(data.user)
-        const registered = await checkRegistrationStatus(data.user.id)
-        setIsRegistered(registered)
+      setUser(data?.user || null)
+      
+      // Check registration status and redirect accordingly
+      const checkAndRedirect = async () => {
+        await checkRegistrationStatus()
+        // Use the updated isRegistered state
+        const { data: userData } = await supabase
+          .from('users')
+          .select('is_registered')
+          .eq('id', data?.user?.id)
+          .single()
         
-        // Redirect based on registration status
-        if (registered) {
+        if (userData?.is_registered) {
           router.push('/dashboard')
         } else {
           router.push('/register')
         }
       }
+      
+      setTimeout(checkAndRedirect, 300)
     }
 
     setLoading(false)
-    return error // ← send it back so form can show it
+    return error
   }
 
   const logout = async () => {
@@ -104,7 +118,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, loading, isRegistered, login, logout }}>
+    <AuthContext.Provider value={{ 
+      user, 
+      loading, 
+      isRegistered, 
+      login, 
+      logout, 
+      checkRegistrationStatus 
+    }}>
       {children}
     </AuthContext.Provider>
   )
@@ -113,7 +134,6 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
 export const useAuth = () => {
   const context = useContext(AuthContext)
   if (!context) {
-    // This will clearly throw where the issue is happening
     throw new Error(
       "❌ useAuth() must be used within an <AuthProvider>. Check if the component using it is a client component and wrapped correctly."
     )

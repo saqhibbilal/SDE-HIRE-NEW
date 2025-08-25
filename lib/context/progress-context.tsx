@@ -167,7 +167,7 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
       console.log("Fetching progress for user ID:", user.id)
       const { data, error } = await supabase
         .from("users")
-        .select("progress, first_name, last_name, display_name, role, is_registered, profile")
+        .select("progress, first_name, last_name, display_name, role")
         .eq("id", user.id)
         .maybeSingle()
 
@@ -186,8 +186,6 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
             last_name: user.user_metadata?.last_name || "User",
             display_name: user.user_metadata?.display_name || null,
             role: "user",
-            is_registered: false,
-            profile: null,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
           })
@@ -228,7 +226,7 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
       console.log("Saving progress for user ID:", user.id, "Data:", updatedState)
       const { data: existingUser, error: fetchError } = await supabase
         .from("users")
-        .select("first_name, last_name, display_name, role, is_registered, profile")
+        .select("first_name, last_name, display_name, role")
         .eq("id", user.id)
         .single()
 
@@ -316,3 +314,4 @@ export function useProgress() {
   }
   return context
 }
+ 
