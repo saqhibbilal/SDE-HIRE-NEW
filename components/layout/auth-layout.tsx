@@ -53,6 +53,16 @@ useEffect(() => {
     logout()
   }
 
+  const getDisplayName = () => {
+    if (user?.user_metadata?.first_name && user?.user_metadata?.last_name) {
+      return `${user.user_metadata.first_name} ${user.user_metadata.last_name}`
+    }
+    if (user?.user_metadata?.display_name) {
+      return user.user_metadata.display_name
+    }
+    return user?.email || "Account"
+  }
+
   return (
     <div className="flex h-screen bg-background">
       {/* Overlay for mobile - closes sidebar when clicking outside */}
@@ -169,10 +179,7 @@ useEffect(() => {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="gap-1">
                     <User className="h-4 w-4" />
-                            {/* modified code
-                    {state.user?.name || "Account"} 
-                    */}
-                    {user?.email || "Account"}
+                    {getDisplayName()}
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">

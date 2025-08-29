@@ -17,7 +17,7 @@ app.use(
 
 const PORT = 3005
 const OLLAMA_API = process.env.OLLAMA_API_URL || "http://127.0.0.1:11434/api/generate"
-const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "stable-code:latest"
+const OLLAMA_MODEL = process.env.OLLAMA_MODEL || "codestral:latest"
 const RESPONSE_STORAGE_PATH = path.join(__dirname, "app", "storage", "PAResponse.json")
 
 // Ensure storage directory exists
@@ -324,7 +324,7 @@ app.get("/explain-stream", async (req, res) => {
         {
           headers: { "Content-Type": "application/json" },
           responseType: "stream",
-          timeout: 250000, // 5 minute timeout
+          timeout: 150000, // 5 minute timeout
         },
       )
 

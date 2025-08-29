@@ -4,6 +4,8 @@ import { Button } from "@/components/ui/button"
 import { Separator } from "@/components/ui/separator"
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu"
 import { Badge } from "@/components/ui/badge"
+import { Switch } from "@/components/ui/switch"
+import { Label } from "@/components/ui/label"
 import { List, ChevronLeft, ChevronRight, CheckCircle, Code } from "lucide-react"
 import type { Question, Language } from "../types" 
 import { useProgress } from "@/lib/context/progress-context"
@@ -17,6 +19,8 @@ interface ProblemHeaderProps {
   isMobile?: boolean
   selectedLanguage: Language
   handleLanguageChange: (value: string) => void
+  isProUser: boolean
+  setIsProUser: (value: boolean) => void
 }
 
 export function ProblemHeader({
@@ -27,6 +31,8 @@ export function ProblemHeader({
   isMobile = false,
   selectedLanguage,
   handleLanguageChange,
+  isProUser,
+  setIsProUser,
 }: ProblemHeaderProps) {
   const { getProblemStatus } = useProgress()
 
@@ -57,7 +63,7 @@ export function ProblemHeader({
                 <span className="hidden sm:inline">Problem List</span>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="w-56">
+            <DropdownMenuContent align="start" className="w-56 max-h-[280px] overflow-y-auto">
               {questions.map((question, index) => {
                 const status = getProblemStatus(question.id)
                 return (
@@ -133,8 +139,20 @@ export function ProblemHeader({
         </div>
       </div>
 
-      {/* Language Selection Dropdown */}
-      <div className="flex items-center">
+      {/* Language Selection Dropdown and User Mode Toggle */}
+      <div className="flex items-center gap-3">
+        {/* User Mode Toggle */}
+        <div className="flex items-center space-x-2">
+          <Label htmlFor="user-mode" className="text-sm font-medium">
+            {isProUser ? "Pro" : "Free"}
+          </Label>
+          <Switch
+            id="user-mode"
+            checked={isProUser}
+            onCheckedChange={setIsProUser}
+          />
+        </div>
+        
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
             <Button variant="outline" size="sm" className="h-8 px-3 gap-2 min-w-[120px] justify-between">

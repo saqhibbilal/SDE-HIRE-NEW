@@ -2,7 +2,10 @@ import { NextResponse } from "next/server"
 
 // RapidAPI Judge0 configuration
 const JUDGE0_RAPIDAPI_HOST = "judge0-ce.p.rapidapi.com"
+// Original API key (commented out due to usage limit)
 const JUDGE0_RAPIDAPI_KEY = "eb4cd7ade4msh3e49f743a0bbcbfp154b38jsn6a20ebf0bd4f"
+ 
+ 
 
 // Add this near the top of the file, after the imports
 const DEBUG_OUTPUT_COMPARISON = true
