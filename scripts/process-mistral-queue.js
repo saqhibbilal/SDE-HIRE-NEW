@@ -321,6 +321,7 @@ async function processQueue() {
         session_id: job.session_id,
         tech_stack: job.tech_stack,
         evaluation_data: evaluationData,
+        user_id: job.user_id, // Add user_id from queue job
         created_at: new Date().toISOString()
       });
       
@@ -336,6 +337,7 @@ async function processQueue() {
         session_id: job.session_id,
         tech_stack: job.tech_stack,
         mcq_marks: evaluationText.mcqEvaluation?.correctAnswers || 0,
+        user_id: job.user_id, // Add user_id from queue job
         long_short_evaluation: {
           overallScore: evaluationText.overallScore,
           mcqScore: evaluationText.mcqScore,

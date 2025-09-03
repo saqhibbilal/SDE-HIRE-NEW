@@ -1,10 +1,35 @@
 import { NextResponse } from 'next/server';
-import { supabase } from '@/lib/supabase';
+import { createServerClient } from '@supabase/ssr';
+import { cookies } from 'next/headers';
 
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { sessionId, techStack, responses, resumeText, isPro, userId } = body;
+    const { sessionId, techStack, responses, resumeText, isPro } = body;
+
+    // Get authenticated user using server-side Supabase client (same as middleware)
+    const cookieStore = await cookies();
+    const supabase = createServerClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+      {
+        cookies: {
+          get(name: string) {
+            return cookieStore.get(name)?.value;
+          },
+        },
+      }
+    );
+
+    const { data: { user }, error: authError } = await supabase.auth.getUser();
+    
+    if (authError || !user) {
+      console.error('❌ Authentication error:', authError);
+      return NextResponse.json({ error: 'Authentication required' }, { status: 401 });
+    }
+
+    const userId = user.id;
+    console.log('✅ Authenticated user:', userId);
 
     console.log('📥 Received API request:', {
       sessionId,
@@ -35,7 +60,7 @@ export async function POST(request: Request) {
       time_spent: resp.timeSpent || 0,
       is_pro_user: isPro || false,
       resume_text: resumeText || null,
-      user_id: userId || null,
+      user_id: userId, // Now always set to authenticated user
       created_at: new Date().toISOString(),
     }));
 
@@ -115,6 +140,7 @@ export async function POST(request: Request) {
               session_id: sessionId,
               tech_stack: techStack,
               mcq_marks: correctAnswers,
+              user_id: userId, // Add user_id to final report
               long_short_evaluation: {
                 overallScore: mcqScore,
                 mcqScore: mcqScore,
@@ -190,6 +216,7 @@ export async function POST(request: Request) {
         long_short_answers: allQuestionsForEvaluation, // Now contains ALL questions with MCQ options
         status: 'pending',
         enqueued_at: new Date().toISOString(),
+        user_id: userId, // Add user_id to queue
       });
       if (queueError) {
         console.error('❌ Queue error:', queueError);

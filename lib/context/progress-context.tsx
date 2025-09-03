@@ -19,12 +19,28 @@ type ProblemProgress = {
   errorCount?: number
 }
 
+// Interview progress types
+type InterviewProgress = {
+  sessionId: string
+  techStack: string
+  mcqMarks: number
+  totalQuestions: number
+  avgTimePerQuestion: number
+  completedAt: string
+  evaluationData?: any
+}
+
 type ProgressState = {
   problemsProgress: Record<number, ProblemProgress>
   totalSolved: number
   totalAttempted: number
   streak: number
   lastActive?: string
+  // Interview progress
+  interviewsProgress: Record<string, InterviewProgress>
+  totalInterviews: number
+  averageInterviewScore: number
+  lastInterviewDate?: string
 }
 
 type ProgressAction =
@@ -33,6 +49,10 @@ type ProgressAction =
   | { type: "MARK_ATTEMPTED"; payload: { problemId: number; errorCount?: number } }
   | { type: "RESET_PROGRESS" }
   | { type: "UPDATE_STREAK" }
+  // Interview actions
+  | { type: "ADD_INTERVIEW"; payload: InterviewProgress }
+  | { type: "UPDATE_INTERVIEW"; payload: InterviewProgress }
+  | { type: "LOAD_INTERVIEWS"; payload: Record<string, InterviewProgress> }
 
 type ProgressContextType = {
   state: ProgressState
@@ -41,6 +61,11 @@ type ProgressContextType = {
   resetProgress: () => void
   getProblemStatus: (problemId: number) => ProblemStatus
   getProgressByDifficulty: (difficulty: string) => { solved: number; total: number }
+  // Interview functions
+  addInterview: (interview: InterviewProgress) => void
+  updateInterview: (interview: InterviewProgress) => void
+  getInterviewHistory: () => InterviewProgress[]
+  getInterviewStats: () => { total: number; average: number; lastDate?: string }
 }
 
 const initialState: ProgressState = {
@@ -48,6 +73,10 @@ const initialState: ProgressState = {
   totalSolved: 0,
   totalAttempted: 0,
   streak: 0,
+  // Interview initial state
+  interviewsProgress: {},
+  totalInterviews: 0,
+  averageInterviewScore: 0,
 }
 
 const ProgressContext = createContext<ProgressContextType | undefined>(undefined)
@@ -130,6 +159,65 @@ function progressReducer(state: ProgressState, action: ProgressAction): Progress
     case "RESET_PROGRESS":
       return initialState
 
+    case "ADD_INTERVIEW": {
+      const { payload: interview } = action
+      console.log('📊 Progress Reducer - ADD_INTERVIEW action:', interview);
+      const existingInterviews = state.interviewsProgress
+      const newInterviews = { ...existingInterviews, [interview.sessionId]: interview }
+      const totalInterviews = Object.keys(newInterviews).length
+      const allScores = Object.values(newInterviews).map(i => i.mcqMarks)
+      const averageScore = allScores.length > 0 ? allScores.reduce((a, b) => a + b, 0) / allScores.length : 0
+
+      console.log('📊 Progress Reducer - Updated state:', {
+        totalInterviews,
+        averageScore,
+        lastDate: interview.completedAt,
+        interviewCount: Object.keys(newInterviews).length
+      });
+
+      return {
+        ...state,
+        interviewsProgress: newInterviews,
+        totalInterviews,
+        averageInterviewScore: averageScore,
+        lastInterviewDate: interview.completedAt,
+      }
+    }
+
+    case "UPDATE_INTERVIEW": {
+      const { payload: interview } = action
+      const updatedInterviews = { ...state.interviewsProgress, [interview.sessionId]: interview }
+      const totalInterviews = Object.keys(updatedInterviews).length
+      const allScores = Object.values(updatedInterviews).map(i => i.mcqMarks)
+      const averageScore = allScores.length > 0 ? allScores.reduce((a, b) => a + b, 0) / allScores.length : 0
+
+      return {
+        ...state,
+        interviewsProgress: updatedInterviews,
+        totalInterviews,
+        averageInterviewScore: averageScore,
+        lastInterviewDate: interview.completedAt,
+      }
+    }
+
+    case "LOAD_INTERVIEWS": {
+      const { payload: interviews } = action
+      const totalInterviews = Object.keys(interviews).length
+      const allScores = Object.values(interviews).map(i => i.mcqMarks)
+      const averageScore = allScores.length > 0 ? allScores.reduce((a, b) => a + b, 0) / allScores.length : 0
+      const lastDate = Object.values(interviews).length > 0 
+        ? Object.values(interviews).sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())[0].completedAt
+        : undefined
+
+      return {
+        ...state,
+        interviewsProgress: interviews,
+        totalInterviews,
+        averageInterviewScore: averageScore,
+        lastInterviewDate: lastDate,
+      }
+    }
+
     default:
       return state
   }
@@ -167,7 +255,7 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
       console.log("Fetching progress for user ID:", user.id)
       const { data, error } = await supabase
         .from("users")
-        .select("progress, first_name, last_name, display_name, role")
+        .select("progress, progress_technicalinterview, first_name, last_name, display_name, role")
         .eq("id", user.id)
         .maybeSingle()
 
@@ -206,8 +294,25 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
         totalAttempted: progress.totalAttempted || 0,
         streak: progress.streak || 0,
         lastActive: progress.lastActive,
+        // Interview progress
+        interviewsProgress: progress.interviewsProgress || {},
+        totalInterviews: progress.totalInterviews || 0,
+        averageInterviewScore: progress.averageInterviewScore || 0,
+        lastInterviewDate: progress.lastInterviewDate,
       }
       dispatch({ type: "INIT_PROGRESS", payload: safeProgress })
+
+      // Load interview progress from progress_technicalinterview column
+      if (data.progress_technicalinterview) {
+        try {
+          const interviewProgress = data.progress_technicalinterview
+          if (interviewProgress && typeof interviewProgress === 'object') {
+            dispatch({ type: "LOAD_INTERVIEWS", payload: interviewProgress })
+          }
+        } catch (error) {
+          console.error("Error parsing interview progress:", error)
+        }
+      }
     } catch (error) {
       console.error("Error fetching progress:", error)
       dispatch({ type: "INIT_PROGRESS", payload: initialState })
@@ -238,6 +343,7 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
         .from("users")
         .update({
           progress: updatedState,
+          progress_technicalinterview: updatedState.interviewsProgress,
           updated_at: new Date().toISOString(),
         })
         .eq("id", user.id)
@@ -291,6 +397,34 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
     return { solved: solvedCount, total: problemsByDifficulty.length }
   }
 
+  // Interview functions
+  const addInterview = (interview: InterviewProgress) => {
+    console.log('📊 Progress Context - Adding interview:', interview);
+    const updatedState = progressReducer(state, { type: "ADD_INTERVIEW", payload: interview })
+    dispatch({ type: "ADD_INTERVIEW", payload: interview })
+    saveProgress(updatedState)
+    console.log('📊 Progress Context - Interview added successfully');
+  }
+
+  const updateInterview = (interview: InterviewProgress) => {
+    const updatedState = progressReducer(state, { type: "UPDATE_INTERVIEW", payload: interview })
+    dispatch({ type: "UPDATE_INTERVIEW", payload: interview })
+    saveProgress(updatedState)
+  }
+
+  const getInterviewHistory = () => {
+    return Object.values(state.interviewsProgress)
+      .sort((a, b) => new Date(b.completedAt).getTime() - new Date(a.completedAt).getTime())
+  }
+
+  const getInterviewStats = () => {
+    const totalInterviews = state.totalInterviews
+    const averageScore = Math.round(state.averageInterviewScore * 10) / 10 // Round to 1 decimal place
+    const lastDate = state.lastInterviewDate
+
+    return { total: totalInterviews, average: averageScore, lastDate }
+  }
+
   return (
     <ProgressContext.Provider
       value={{
@@ -300,6 +434,11 @@ export function ProgressProvider({ children }: { children: React.ReactNode }) {
         resetProgress,
         getProblemStatus,
         getProgressByDifficulty,
+        // Interview functions
+        addInterview,
+        updateInterview,
+        getInterviewHistory,
+        getInterviewStats,
       }}
     >
       {children}

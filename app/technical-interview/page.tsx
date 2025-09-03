@@ -32,6 +32,7 @@ import {
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { VoiceAnimation } from "@/components/voice-animation"
+import { useProgress } from "@/lib/context/progress-context"
 // Remove react-tts import
 // import ReactTTS from "react-tts"
 import mammoth from "mammoth";
@@ -241,6 +242,9 @@ export default function TechnicalInterviewSimulator() {
   const [currentSessionId, setCurrentSessionId] = useState<string | null>(null)
   const [isPollingResults, setIsPollingResults] = useState(false)
   const [evaluationStatus, setEvaluationStatus] = useState<'processing' | 'completed' | 'error'>('processing')
+
+  // Progress Context
+  const { addInterview } = useProgress()
 
   // Timer Effect
   useEffect(() => {
@@ -634,6 +638,54 @@ export default function TechnicalInterviewSimulator() {
         setEvaluationResult(data.evaluation);
         setEvaluationStatus('completed');
         setIsPollingResults(false);
+        
+        // Add interview to progress context for pro users
+        // Get sessionId and techStack from localStorage if currentSessionId is null
+        const sessionIdToUse = currentSessionId || data.sessionId;
+        const techStackToUse = techStack || data.techStack || localStorage.getItem('currentTechStack');
+        
+        if (sessionIdToUse && techStackToUse) {
+          try {
+            const interviewData = {
+              sessionId: sessionIdToUse,
+              techStack: techStackToUse,
+              mcqMarks: data.evaluation.overallScore || data.evaluation.mcqScore || 0,
+              totalQuestions: data.evaluation.totalQuestions || userAnswers.length,
+              avgTimePerQuestion: userAnswers.length > 0 
+                ? Math.round(userAnswers.reduce((sum, answer) => sum + answer.timeSpent, 0) / userAnswers.length)
+                : 0,
+              completedAt: new Date().toISOString(),
+              evaluationData: data.evaluation
+            };
+            
+            console.log('📊 Adding pro user interview to progress context:', interviewData);
+            
+            // Prevent duplicate submissions for pro users too
+            const processedSessions = JSON.parse(localStorage.getItem('processedInterviewSessions') || '[]');
+            if (!processedSessions.includes(sessionIdToUse)) {
+              addInterview(interviewData);
+              console.log('✅ Pro user interview added to progress successfully');
+              
+              // Mark this session as processed
+              processedSessions.push(sessionIdToUse);
+              localStorage.setItem('processedInterviewSessions', JSON.stringify(processedSessions));
+            } else {
+              console.log('⚠️ Pro user interview session already processed, skipping:', sessionIdToUse);
+            }
+          } catch (error) {
+            console.error('❌ Error adding pro user interview to progress:', error);
+          }
+        } else {
+          console.log('⚠️ Missing sessionId or techStack for pro user interview:', { 
+            currentSessionId, 
+            techStack, 
+            dataSessionId: data.sessionId, 
+            dataTechStack: data.techStack,
+            sessionIdToUse, 
+            techStackToUse 
+          });
+        }
+        
         return true;
       } else if (data.status === 'processing') {
         console.log('⏳ Still processing...');
@@ -694,9 +746,10 @@ export default function TechnicalInterviewSimulator() {
     try {
       const sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
-      // Store sessionId for polling results
+      // Store sessionId and techStack for polling results
       setCurrentSessionId(sessionId);
       localStorage.setItem('currentSessionId', sessionId);
+      localStorage.setItem('currentTechStack', techStack);
       
       const requestData = {
         sessionId,
@@ -755,6 +808,45 @@ export default function TechnicalInterviewSimulator() {
         setEvaluationResult(result.evaluation);
         setEvaluationStatus('completed');
         
+        // Add interview to progress context
+        const sessionIdToUse = sessionId;
+        
+        if (sessionIdToUse && techStack) {
+          try {
+            const interviewData = {
+              sessionId: sessionIdToUse,
+              techStack: techStack,
+              mcqMarks: result.evaluation.overallScore || result.evaluation.mcqScore || 0,
+              totalQuestions: result.evaluation.totalQuestions || userAnswers.length,
+              avgTimePerQuestion: userAnswers.length > 0 
+                ? Math.round(userAnswers.reduce((sum, answer) => sum + answer.timeSpent, 0) / userAnswers.length)
+                : 0,
+              completedAt: new Date().toISOString(),
+              evaluationData: result.evaluation
+            };
+            
+            // Prevent duplicate submissions by checking if this session was already processed
+            const processedSessions = JSON.parse(localStorage.getItem('processedInterviewSessions') || '[]');
+            if (!processedSessions.includes(sessionIdToUse)) {
+              console.log('📊 Adding interview to progress context:', interviewData);
+              addInterview(interviewData);
+              console.log('✅ Interview added to progress successfully');
+              
+              // Mark this session as processed
+              processedSessions.push(sessionIdToUse);
+              localStorage.setItem('processedInterviewSessions', JSON.stringify(processedSessions));
+            } else {
+              console.log('⚠️ Interview session already processed, skipping:', sessionIdToUse);
+            }
+          } catch (error) {
+            console.error('❌ Error adding interview to progress:', error);
+          }
+        } else {
+          console.log('⚠️ Cannot add to progress - missing sessionId or techStack');
+          console.log('⚠️ sessionIdToUse:', sessionIdToUse);
+          console.log('⚠️ techStack:', techStack);
+        }
+        
         // If it's an instant evaluation (free user), show success message
         if (result.isInstantEvaluation) {
           console.log('✅ Instant MCQ evaluation completed for free user');
@@ -794,6 +886,7 @@ export default function TechnicalInterviewSimulator() {
     setIsPollingResults(false)
     setEvaluationStatus('processing')
     localStorage.removeItem('currentSessionId')
+    localStorage.removeItem('currentTechStack')
   }
 
   // Restore toggleSpeech function, ensure it only runs on client

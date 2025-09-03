@@ -6,6 +6,7 @@ import { ProfileSidebar } from "./components/profile-sidebar"
 import { ProgressTab } from "./components/progress-tab"
 import { ActivityTab } from "./components/activity-tab"
 import { BadgesTab } from "./components/badges-tab"
+import { ReportsTab } from "./components/reports-tab"
 
 export default function ProfilePage() {
   return (
@@ -24,6 +25,7 @@ export default function ProfilePage() {
                 <TabsTrigger value="progress">Progress</TabsTrigger>
                 <TabsTrigger value="activity">Activity</TabsTrigger>
                 <TabsTrigger value="badges">Badges</TabsTrigger>
+                <TabsTrigger value="reports">Reports</TabsTrigger>
               </TabsList>
 
               <TabsContent value="progress">
@@ -36,6 +38,10 @@ export default function ProfilePage() {
 
               <TabsContent value="badges">
                 <BadgesTab />
+              </TabsContent>
+
+              <TabsContent value="reports">
+                <ReportsTab />
               </TabsContent>
             </Tabs>
           </div>
