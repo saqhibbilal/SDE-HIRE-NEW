@@ -8,7 +8,7 @@ export default function DashboardPage() {
   return (
     <AuthLayout>
       <div className="p-6">
-        <h1 className="text-3xl font-bold mb-6">Welcome to SDE Hire</h1>
+        <h1 className="text-3xl font-bold mb-6">Welcome to <span className="text-blue-600">Upady</span><span className="text-yellow-500">ai</span></h1>
 
         <StatsSection />
 

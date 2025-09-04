@@ -84,7 +84,7 @@ useEffect(() => {
         {/* Sidebar Header */}
         <div className="flex h-14 items-center border-b px-4">
           <Link href="/dashboard" className="flex items-center">
-            <span className="font-bold text-primary">SDE Hire</span>
+            <span className="font-bold"><span className="text-blue-600">Upady</span><span className="text-yellow-500">ai</span></span>
           </Link>
           <Button variant="ghost" size="icon" className="ml-auto" onClick={() => setSidebarOpen(false)}>
             <X className="h-4 w-4" />
@@ -217,7 +217,7 @@ useEffect(() => {
         {/* Footer */}
         <footer className="border-t py-4 px-6 bg-background">
           <div className="container mx-auto flex flex-col md:flex-row justify-between items-center">
-            <div className="text-sm text-muted-foreground mb-2 md:mb-0">© 2023 SDE Hire. All rights reserved.</div>
+            <div className="text-sm text-muted-foreground mb-2 md:mb-0">© 2023 Upadyai. All rights reserved.</div>
             <div className="flex space-x-4">
               <Link href="/terms" className="text-sm text-muted-foreground hover:text-foreground">
                 Terms of Service

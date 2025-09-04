@@ -7,7 +7,7 @@ import { AppProviders } from "@/lib/context/providers"
 const inter = Inter({ subsets: ["latin"] })
 
 export const metadata: Metadata = {
-  title: "SDE Hire",
+  title: "Upadyai",
   description: "AI DSA Tutor for Software Development Engineers",
     generator: 'v0.dev'
 }
