@@ -10,7 +10,7 @@ export default function HomePage() {
       <header className="border-b bg-background">
         <div className="container mx-auto flex h-16 items-center justify-between px-4">
           <div className="flex items-center gap-2">
-            <span className="text-xl font-bold text-primary">SDE Hire</span>
+            <span className="text-xl font-bold"><span className="text-blue-600">Upady</span><span className="text-yellow-500">ai</span></span>
           </div>
           <nav className="hidden md:flex items-center gap-6">
             <Link href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground">
@@ -61,7 +61,7 @@ export default function HomePage() {
           <div className="relative mx-auto max-w-5xl rounded-lg border bg-background shadow-lg overflow-hidden">
             <Image
               src="/abstract-geometric-shapes.png"
-              alt="SDE Hire Dashboard"
+              alt="upadyAI Dashboard"
               width={1200}
               height={675}
               className="w-full h-auto"
@@ -75,7 +75,7 @@ export default function HomePage() {
       {/* Features Section */}
       <section id="features" className="py-20 bg-muted/50">
         <div className="container mx-auto px-4">
-          <h2 className="text-3xl font-bold text-center mb-12">Why Choose SDE Hire?</h2>
+          <h2 className="text-3xl font-bold text-center mb-12">Why Choose <span className="text-blue-600">Upady</span><span className="text-yellow-500">ai</span>?</h2>
           <div className="grid md:grid-cols-3 gap-8">
             <div className="bg-background p-6 rounded-lg border">
               <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mb-4">
@@ -177,7 +177,7 @@ export default function HomePage() {
                 </div>
               </div>
               <p className="text-muted-foreground">
-                "SDE Hire helped me prepare for my Google interview in just 3 weeks. The AI tutor was like having a
+                "Upadyai helped me prepare for my Google interview in just 3 weeks. The AI tutor was like having a
                 personal coach available 24/7."
               </p>
             </div>
@@ -207,7 +207,7 @@ export default function HomePage() {
                 </div>
               </div>
               <p className="text-muted-foreground">
-                "I've tried many platforms, but SDE Hire's AI tutor provides the most relevant hints without giving away
+                "I've tried many platforms, but Upadyai's AI tutor provides the most relevant hints without giving away
                 the solution. Perfect balance!"
               </p>
             </div>
@@ -220,7 +220,7 @@ export default function HomePage() {
         <div className="container mx-auto px-4 text-center">
           <h2 className="text-3xl font-bold mb-6">Ready to Ace Your Next Technical Interview?</h2>
           <p className="text-xl opacity-90 max-w-2xl mx-auto mb-8">
-            Join thousands of developers who have improved their DSA skills with SDE Hire.
+            Join thousands of developers who have improved their DSA skills with Upadyai.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <Link href="/signup">
@@ -328,9 +328,9 @@ export default function HomePage() {
           </div>
           <div className="pt-8 border-t flex flex-col md:flex-row justify-between items-center">
             <div className="mb-4 md:mb-0">
-              <span className="text-xl font-bold text-primary">SDE Hire</span>
+              <span className="text-xl font-bold"><span className="text-blue-600">Upady</span><span className="text-yellow-500">ai</span></span>
             </div>
-            <div className="text-sm text-muted-foreground">© 2023 SDE Hire. All rights reserved.</div>
+            <div className="text-sm text-muted-foreground">© 2023 Upadyai. All rights reserved.</div>
           </div>
         </div>
       </footer>
