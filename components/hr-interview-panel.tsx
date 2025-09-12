@@ -7,6 +7,7 @@ import { useState, useRef, useEffect, useLayoutEffect, useCallback } from "react
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Textarea } from "@/components/ui/textarea"
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 import { Send, SkipForward, Volume2, Mic, MicOff, Info, Lock } from "lucide-react"
 import { cn } from "@/lib/utils"
 import Lottie from "react-lottie-player"
@@ -49,6 +50,7 @@ interface HRInterviewPanelProps {
   onNextQuestion: () => void
   isLastQuestion: boolean
   interviewMode: "pro" | "video"
+  selectedAIModel?: string
   // Phase 4: Response Tracking Props
   currentQuestionIndex: number
   onUpdateResponse: (questionIndex: number, response: string) => Promise<void>
@@ -73,6 +75,7 @@ export function HRInterviewPanel({
   onNextQuestion,
   isLastQuestion,
   interviewMode,
+  selectedAIModel,
   // Phase 4: Response Tracking Props
   currentQuestionIndex,
   onUpdateResponse,
@@ -161,6 +164,9 @@ export function HRInterviewPanel({
   const [isFrozen, setIsFrozen] = useState(false);
   const [freezeSecondsLeft, setFreezeSecondsLeft] = useState(3);
   const [isProcessingAction, setIsProcessingAction] = useState(false); // New state for action processing
+  
+  // Dialog state for finish interview confirmation
+  const [showFinishDialog, setShowFinishDialog] = useState(false);
 
   // detector ref (for manual save)
   const detectorRef = useRef<EmotionDetectorHandle | null>(null);
@@ -1488,30 +1494,11 @@ export function HRInterviewPanel({
               <Button 
                 onClick={async () => {
                   if (isLastQuestion) {
-                    // Check if all questions are answered before finishing
-                    const totalQuestions = hrInterviewQuestions?.length || 0;
-                    const answeredQuestions = hrInterviewQuestions ? 
-                      hrInterviewQuestions.filter((_, i) => getCurrentResponse(i)?.hasResponse).length : 0;
-                    
-                                      if (answeredQuestions < totalQuestions) {
-                    const confirmFinish = confirm(
-                      `You have only answered ${answeredQuestions} out of ${totalQuestions} questions. Are you sure you want to finish the interview?`
-                    );
-                    if (!confirmFinish) return;
+                    // Show dialog instead of browser popup
+                    setShowFinishDialog(true);
+                    return;
                   }
-                  
-                  // Show final confirmation
-                  const finalConfirm = confirm(
-                    `Ready to finish your interview?\n\n` +
-                    `📊 Summary:\n` +
-                    `• Questions: ${totalQuestions}\n` +
-                    `• Answered: ${answeredQuestions}\n` +
-                    `• Completion: ${Math.round((answeredQuestions / totalQuestions) * 100)}%\n\n` +
-                    `Your responses will be saved and the final report will be generated.`
-                  );
-                  if (!finalConfirm) return;
-                }
-                handleSubmitHRAnswer();
+                  handleSubmitHRAnswer();
                 }} 
                 title={isLastQuestion ? "Finish the interview" : "Submit your answer"} 
                 disabled={isProcessingAction || isSpeaking}
@@ -1536,6 +1523,111 @@ export function HRInterviewPanel({
           </CardFooter>
         </>
       )}
+      
+      {/* Finish Interview Confirmation Dialog */}
+      <Dialog open={showFinishDialog} onOpenChange={setShowFinishDialog}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <span className="text-2xl">🎯</span>
+              Finish Interview
+            </DialogTitle>
+            <DialogDescription>
+              Are you ready to complete your interview and generate the final report?
+            </DialogDescription>
+          </DialogHeader>
+          
+          <div className="py-4">
+            {(() => {
+              const totalQuestions = hrInterviewQuestions?.length || 0;
+              const answeredQuestions = hrInterviewQuestions ? 
+                hrInterviewQuestions.filter((_, i) => getCurrentResponse(i)?.hasResponse).length : 0;
+              const completionRate = Math.round((answeredQuestions / totalQuestions) * 100);
+              
+              return (
+                <div className="space-y-4">
+                  {/* Summary Stats */}
+                  <div className="bg-blue-50 dark:bg-blue-900/20 rounded-lg p-4 border border-blue-200 dark:border-blue-700">
+                    <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-3">📊 Interview Summary</h4>
+                    <div className="grid grid-cols-2 gap-4 text-sm">
+                      <div>
+                        <span className="text-blue-700 dark:text-blue-200">Total Questions:</span>
+                        <span className="ml-2 font-medium text-blue-800 dark:text-blue-100">{totalQuestions}</span>
+                      </div>
+                      <div>
+                        <span className="text-blue-700 dark:text-blue-200">Answered:</span>
+                        <span className="ml-2 font-medium text-blue-800 dark:text-blue-100">{answeredQuestions}</span>
+                      </div>
+                      <div className="col-span-2">
+                        <span className="text-blue-700 dark:text-blue-200">Completion Rate:</span>
+                        <span className="ml-2 font-medium text-blue-800 dark:text-blue-100">{completionRate}%</span>
+                      </div>
+                    </div>
+                    
+                    {/* Progress Bar */}
+                    <div className="mt-3">
+                      <div className="w-full bg-blue-200 dark:bg-blue-800 rounded-full h-2">
+                        <div 
+                          className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                          style={{ width: `${completionRate}%` }}
+                        ></div>
+                      </div>
+                    </div>
+                  </div>
+                  
+                  {/* Warning if not all questions answered */}
+                  {answeredQuestions < totalQuestions && (
+                    <div className="bg-amber-50 dark:bg-amber-900/20 rounded-lg p-4 border border-amber-200 dark:border-amber-700">
+                      <div className="flex items-start gap-2">
+                        <span className="text-amber-600 dark:text-amber-400 text-lg">⚠️</span>
+                        <div>
+                          <h4 className="font-semibold text-amber-800 dark:text-amber-300 mb-1">Incomplete Interview</h4>
+                          <p className="text-sm text-amber-700 dark:text-amber-200">
+                            You have only answered {answeredQuestions} out of {totalQuestions} questions. 
+                            You can still finish now, but consider completing all questions for a more comprehensive report.
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  
+                  <div className="bg-green-50 dark:bg-green-900/20 rounded-lg p-4 border border-green-200 dark:border-green-700">
+                    <div className="flex items-start gap-2">
+                      <span className="text-green-600 dark:text-green-400 text-lg">✅</span>
+                      <div>
+                        <h4 className="font-semibold text-green-800 dark:text-green-300 mb-1">What happens next?</h4>
+                        <p className="text-sm text-green-700 dark:text-green-200">
+                          Your responses will be saved and a comprehensive behavioral analysis report will be generated, 
+                          including body language analytics and interview insights.
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+          </div>
+          
+          <DialogFooter className="flex-col sm:flex-row gap-2">
+            <Button 
+              variant="outline" 
+              onClick={() => setShowFinishDialog(false)}
+              className="w-full sm:w-auto"
+            >
+              Continue Interview
+            </Button>
+            <Button 
+              onClick={() => {
+                setShowFinishDialog(false);
+                handleSubmitHRAnswer();
+              }}
+              className="w-full sm:w-auto bg-red-600 hover:bg-red-700"
+            >
+              Finish Interview
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </Card>
   )
 }
