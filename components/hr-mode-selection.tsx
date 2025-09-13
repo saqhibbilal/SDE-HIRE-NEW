@@ -38,10 +38,10 @@ export function HRModeSelection({ onModeSelected }: HRModeSelectionProps) {
               <div className="flex-1">
                 <h3 className="text-base font-semibold text-gray-800 dark:text-gray-100">Pro Mode</h3>
                 <p className="text-sm text-gray-600 dark:text-gray-300">
-                  Full video interview with camera and microphone. Includes voice recording and behavioral analysis.
+                  Full video interview with camera and microphone. Choose your preferred AI model for enhanced analysis.
                 </p>
                 <div className="mt-2 text-xs text-blue-600 dark:text-blue-400 font-medium">
-                  ✓ Camera + Microphone + Voice Recording + Behavioral insights
+                  ✓ Camera + Microphone + Voice Recording + AI Model Selection + Behavioral insights
                 </div>
               </div>
             </CardContent>

@@ -4,7 +4,7 @@ import { useRouter } from "next/navigation"
 import type { ReactNode } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
-import { BookOpen, Code, Home, LogOut, Settings, User, Menu, X } from "lucide-react"
+import { BookOpen, Code, Home, LogOut, Settings, User, Menu, X, MessageSquare, Users } from "lucide-react"
 import { useState, useEffect } from "react"
 
 import { Button } from "@/components/ui/button"
@@ -130,6 +130,30 @@ useEffect(() => {
           </Button>
 
           <Button
+            variant={isActive("/technical-interview") ? "default" : "ghost"}
+            size="sm"
+            className="w-full justify-start"
+            asChild
+          >
+            <Link href="/technical-interview" className="flex items-center gap-2">
+              <MessageSquare className="h-4 w-4" />
+              <span>Technical Interview</span>
+            </Link>
+          </Button>
+
+          <Button
+            variant={isActive("/hr-interview") ? "default" : "ghost"}
+            size="sm"
+            className="w-full justify-start"
+            asChild
+          >
+            <Link href="/hr-interview" className="flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              <span>HR Interview</span>
+            </Link>
+          </Button>
+
+          <Button
             variant={isActive("/profile") ? "default" : "ghost"}
             size="sm"
             className="w-full justify-start md:hidden"
@@ -141,7 +165,8 @@ useEffect(() => {
             </Link>
           </Button>
 
-          <Button
+          {/* Settings page temporarily hidden - keeping code for future use */}
+          {/* <Button
             variant={isActive("/settings") ? "default" : "ghost"}
             size="sm"
             className="w-full justify-start md:hidden"
@@ -151,7 +176,7 @@ useEffect(() => {
               <Settings className="h-4 w-4" />
               <span>Settings</span>
             </Link>
-          </Button>
+          </Button> */}
         </nav>
 
         {/* Sidebar Footer */}
@@ -191,12 +216,13 @@ useEffect(() => {
                       Profile
                     </Link>
                   </DropdownMenuItem>
-                  <DropdownMenuItem asChild>
+                  {/* Settings page temporarily hidden - keeping code for future use */}
+                  {/* <DropdownMenuItem asChild>
                     <Link href="/settings" className="flex items-center gap-2 cursor-pointer">
                       <Settings className="h-4 w-4" />
                       Settings
                     </Link>
-                  </DropdownMenuItem>
+                  </DropdownMenuItem> */}
                   <DropdownMenuSeparator />
                   <DropdownMenuItem
                     className="flex items-center gap-2 cursor-pointer text-red-500"

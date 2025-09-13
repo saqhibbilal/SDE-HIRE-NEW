@@ -30,6 +30,8 @@ interface HRInterviewReportProps {
     hasResponse: boolean
   }> | null
   onRefreshResponses?: () => boolean
+  // Phase 4: HR Evaluation data
+  hrEvaluation?: any | null
 }
 
 interface SessionMetrics {
@@ -57,7 +59,8 @@ export function HRInterviewReport({
   onStartNewInterview,
   resumeAnalysis,
   interviewResponses,
-  onRefreshResponses
+  onRefreshResponses,
+  hrEvaluation
 }: HRInterviewReportProps) {
   
   // Phase 5: Debug - Log the data received
@@ -71,11 +74,19 @@ export function HRInterviewReport({
         responseLength: r.responseLength,
         userResponse: r.userResponse?.substring(0, 50) + '...'
       }))
+    } : 'null',
+    hrEvaluation: hrEvaluation ? {
+      hasEvaluation: true,
+      overallScore: hrEvaluation.overallScore,
+      hasStrengths: !!hrEvaluation.strengths,
+      hasQuestionEvaluations: !!hrEvaluation.questionEvaluations
     } : 'null'
   })
   const [sessionMetrics, setSessionMetrics] = useState<SessionMetrics | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
+  const [saving, setSaving] = useState(false)
+  const [saveSuccess, setSaveSuccess] = useState(false)
 
   // Helper calculation functions (moved to top for initialization)
     const calculateStability = (yaw: number[], pitch: number[], roll: number[]): number => {
@@ -368,6 +379,82 @@ export function HRInterviewReport({
 
     void fetchLatestReport();
   }, []);
+
+  // Save HR Report to Profile
+  const saveReportToProfile = async () => {
+    try {
+      setSaving(true)
+      setSaveSuccess(false)
+
+      // Generate a unique session ID
+      const sessionId = `hr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+
+      // Phase 4: Use HR evaluation data passed from interview completion
+      console.log('💾 Saving HR report with evaluation data:', hrEvaluation ? 'Available' : 'Not available')
+      if (hrEvaluation) {
+        console.log('📊 HR Evaluation data being saved:', {
+          overallScore: hrEvaluation.overallScore,
+          hasStrengths: !!hrEvaluation.strengths,
+          hasQuestionEvaluations: !!hrEvaluation.questionEvaluations,
+          evaluationType: typeof hrEvaluation
+        })
+      }
+
+      // Prepare the data to save
+      const reportData = {
+        sessionId,
+        resumeAnalysis,
+        interviewResponses,
+        hrEvaluation, // Use evaluation data passed from interview completion
+        behavioralMetrics: sessionMetrics ? {
+          overallScore: processedMetrics?.overallScore || 0,
+          confidenceLevel: processedMetrics?.confidenceLevel || 0,
+          attentionSpan: processedMetrics?.attentionSpan || 0,
+          professionalismScore: processedMetrics?.professionalismScore || 0,
+          avgEyeContact: processedMetrics?.avgEyeContact || 0,
+          stabilityScore: processedMetrics?.stabilityScore || 0,
+          emotionalRange: processedMetrics?.emotionalRange || 0,
+          techQuality: processedMetrics?.techQuality || 0
+        } : null
+      }
+
+      // Debug: Log the complete data being sent
+      console.log('📤 Complete report data being sent to API:', {
+        sessionId: !!reportData.sessionId,
+        resumeAnalysis: !!reportData.resumeAnalysis,
+        interviewResponses: reportData.interviewResponses ? reportData.interviewResponses.length : 0,
+        hrEvaluation: !!reportData.hrEvaluation,
+        hrEvaluationType: typeof reportData.hrEvaluation,
+        hrEvaluationKeys: reportData.hrEvaluation ? Object.keys(reportData.hrEvaluation) : [],
+        behavioralMetrics: !!reportData.behavioralMetrics
+      })
+
+      const response = await fetch('/api/hr-reports', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(reportData)
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to save report')
+      }
+
+      const result = await response.json()
+      console.log('HR report saved successfully:', result)
+      
+      setSaveSuccess(true)
+      setTimeout(() => setSaveSuccess(false), 3000) // Hide success message after 3 seconds
+
+    } catch (error) {
+      console.error('Error saving HR report:', error)
+      alert(`Failed to save report: ${error instanceof Error ? error.message : 'Unknown error'}`)
+    } finally {
+      setSaving(false)
+    }
+  }
 
   // Phase 5: PDF Download Function
   const downloadReportAsPDF = async () => {
@@ -961,31 +1048,6 @@ export function HRInterviewReport({
           </CardContent>
         </Card>
 
-        {/* Debug Information */}
-        <Card className="dark:bg-slate-800 dark:border-slate-700">
-          <CardHeader><CardTitle className="dark:text-gray-100">🔍 Debug Information</CardTitle></CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              <div className="p-3 bg-yellow-50 dark:bg-yellow-900/20 rounded-lg border border-yellow-200 dark:border-yellow-700">
-                <h4 className="font-semibold text-yellow-800 dark:text-yellow-300 mb-2">Interview Responses Debug</h4>
-                <div className="text-sm text-yellow-700 dark:text-yellow-300">
-                  <p><strong>Total Responses Array Length:</strong> {interviewResponses?.length || 'undefined'}</p>
-                  <p><strong>Responses with Content:</strong> {interviewResponses?.filter(r => r.hasResponse).length || 0}</p>
-                  <p><strong>First Response Sample:</strong> {interviewResponses && interviewResponses[0] ? 
-                    `Q1: ${interviewResponses[0].questionText?.substring(0, 50)}... | Response: ${interviewResponses[0].userResponse?.substring(0, 50) || 'No response'}...` 
-                    : 'No responses available'}</p>
-                </div>
-              </div>
-              
-              <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg border border-blue-200 dark:border-blue-700">
-                <h4 className="font-semibold text-blue-800 dark:text-blue-300 mb-2">Raw Metrics (Partial View)</h4>
-        <pre className="bg-gray-100 dark:bg-gray-800 p-4 rounded-md text-sm overflow-auto max-h-60 text-gray-800 dark:text-gray-200">
-          {JSON.stringify(sessionMetrics, null, 2)}
-        </pre>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
       </div>
     )
   }
@@ -997,8 +1059,163 @@ export function HRInterviewReport({
       </CardHeader>
       <CardContent className="space-y-6">
         {renderInsights()}
+        
+        {/* Phase 4: HR Q&A Evaluation Section */}
+        {hrEvaluation && (
+          <Card className="dark:bg-slate-800 dark:border-slate-700">
+            <CardHeader>
+              <CardTitle className="text-2xl font-bold text-center text-gray-800 dark:text-gray-100">
+                HR Interview Q&A Evaluation
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Overall Score */}
+              <div className="text-center">
+                <div className="inline-flex items-center justify-center w-24 h-24 rounded-full bg-gradient-to-r from-blue-500 to-purple-600 text-white text-2xl font-bold mb-4">
+                  {hrEvaluation.overallScore?.toFixed(1) || 'N/A'}
+                </div>
+                <p className="text-lg font-semibold text-gray-800 dark:text-gray-200">
+                  Overall Performance Score
+                </p>
+                <p className="text-sm text-gray-600 dark:text-gray-400">
+                  {hrEvaluation.overallFeedback || 'No feedback available'}
+                </p>
+              </div>
+
+              {/* Strengths and Areas for Improvement */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-green-700 dark:text-green-400 text-lg">
+                    Strengths Identified
+                  </h4>
+                  <ul className="space-y-2">
+                    {hrEvaluation.strengths?.map((strength: string, index: number) => (
+                      <li key={index} className="flex items-start text-sm text-gray-700 dark:text-gray-200">
+                        <span className="text-green-500 mr-2">✓</span>
+                        {strength}
+                      </li>
+                    )) || <li className="text-sm text-gray-500 dark:text-gray-400">No specific strengths identified</li>}
+                  </ul>
+                </div>
+                <div className="space-y-3">
+                  <h4 className="font-semibold text-amber-700 dark:text-amber-400 text-lg">
+                    Areas for Improvement
+                  </h4>
+                  <ul className="space-y-2">
+                    {hrEvaluation.areasForImprovement?.map((area: string, index: number) => (
+                      <li key={index} className="flex items-start text-sm text-gray-700 dark:text-gray-200">
+                        <span className="text-amber-500 mr-2">•</span>
+                        {area}
+                      </li>
+                    )) || <li className="text-sm text-gray-500 dark:text-gray-400">No specific areas identified</li>}
+                  </ul>
+                </div>
+              </div>
+
+              {/* Individual Question Evaluations */}
+              {hrEvaluation.questionEvaluations && hrEvaluation.questionEvaluations.length > 0 && (
+                <div className="space-y-4">
+                  <h4 className="font-semibold text-gray-800 dark:text-gray-200 text-lg">
+                    Question-by-Question Analysis
+                  </h4>
+                  <div className="space-y-4">
+                    {hrEvaluation.questionEvaluations.map((qEval: any, index: number) => (
+                      <div key={index} className="border border-gray-200 dark:border-slate-600 rounded-lg p-4">
+                        <div className="flex justify-between items-start mb-3">
+                          <div>
+                            <h5 className="font-medium text-gray-800 dark:text-gray-200">
+                              Question {qEval.questionNumber}
+                            </h5>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {qEval.questionType} • {qEval.questionTopic}
+                            </p>
+                          </div>
+                          <div className="text-right">
+                            <div className="text-lg font-bold text-blue-600 dark:text-blue-400">
+                              {qEval.score?.toFixed(1) || 'N/A'}/10
+                            </div>
+                          </div>
+                        </div>
+                        <p className="text-sm text-gray-700 dark:text-gray-200 mb-3">
+                          {qEval.feedback || 'No specific feedback available'}
+                        </p>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-xs">
+                          {qEval.strengths && qEval.strengths.length > 0 && (
+                            <div>
+                              <span className="font-medium text-green-700 dark:text-green-400">Strengths:</span>
+                              <ul className="mt-1">
+                                {qEval.strengths.map((strength: string, sIndex: number) => (
+                                  <li key={sIndex} className="text-green-600 dark:text-green-300">• {strength}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                          {qEval.improvements && qEval.improvements.length > 0 && (
+                            <div>
+                              <span className="font-medium text-amber-700 dark:text-amber-400">Improvements:</span>
+                              <ul className="mt-1">
+                                {qEval.improvements.map((improvement: string, iIndex: number) => (
+                                  <li key={iIndex} className="text-amber-600 dark:text-amber-300">• {improvement}</li>
+                                ))}
+                              </ul>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Recommendations */}
+              {hrEvaluation.recommendations && (
+                <div className="bg-gray-50 dark:bg-slate-700 rounded-lg p-4">
+                  <h4 className="font-semibold text-gray-800 dark:text-gray-200 text-lg mb-3">
+                    Recommendations
+                  </h4>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">Hire Recommendation:</span>
+                      <p className="text-gray-600 dark:text-gray-400 mt-1">
+                        {hrEvaluation.recommendations.hireRecommendation || 'Not specified'}
+                      </p>
+                    </div>
+                    <div>
+                      <span className="font-medium text-gray-700 dark:text-gray-300">Confidence Level:</span>
+                      <p className="text-gray-600 dark:text-gray-400 mt-1">
+                        {hrEvaluation.recommendations.confidence || 'Not specified'}
+                      </p>
+                    </div>
+                    <div className="md:col-span-1">
+                      <span className="font-medium text-gray-700 dark:text-gray-300">Next Steps:</span>
+                      <p className="text-gray-600 dark:text-gray-400 mt-1">
+                        {hrEvaluation.recommendations.nextSteps || 'No specific next steps'}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        )}
+        
         <div className="flex justify-center gap-4 pt-4 border-t dark:border-slate-600">
           <Button onClick={onStartNewInterview}>Start New Interview</Button>
+          
+          {/* Save to Profile Button */}
+          <Button 
+            onClick={saveReportToProfile}
+            disabled={saving || saveSuccess}
+            variant="outline"
+            className={`${
+              saveSuccess 
+                ? 'bg-green-50 border-green-200 text-green-700 dark:bg-green-900/20 dark:border-green-700 dark:text-green-300' 
+                : 'bg-purple-50 border-purple-200 text-purple-700 hover:bg-purple-100 dark:bg-purple-900/20 dark:border-purple-700 dark:text-purple-300'
+            }`}
+          >
+            {saving ? '💾 Saving...' : saveSuccess ? '✅ Saved!' : '💾 Save to Profile'}
+          </Button>
+          
           {onRefreshResponses && (
             <Button 
               onClick={() => {

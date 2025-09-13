@@ -45,14 +45,14 @@ export function CodeAssistance({
             className="flex-1 text-xs md:text-sm dark:data-[state=active]:neon-text-cyan dark:data-[state=active]:neon-border-cyan"
           >
             <HelpCircle className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-            <span className="hidden xs:inline">Problem</span> Assistance
+            <span className="hidden xs:inline">Problem</span>Problem Assistance
           </TabsTrigger>
           <TabsTrigger
             value="ai"
             className="flex-1 text-xs md:text-sm dark:data-[state=active]:neon-text-pink dark:data-[state=active]:neon-border-pink"
           >
             <BrainCircuit className="h-3 w-3 md:h-4 md:w-4 mr-1 md:mr-2" />
-            <span className="hidden xs:inline">AI</span> Assistance
+            <span className="hidden xs:inline">AI</span>AI Assistance
           </TabsTrigger>
         </TabsList>
 

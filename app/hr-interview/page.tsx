@@ -7,17 +7,19 @@ import { HRModeSelection } from "@/components/hr-mode-selection"
 import { HRInterviewPanel } from "@/components/hr-interview-panel"
 import { HRPresenceSidebar } from "@/components/hr-presence-sidebar"
 import { HRInterviewReport } from "@/components/hr-interview-report" // New import
+import { AIModelSelection } from "@/components/ai-model-selection"
 import { Button } from "@/components/ui/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import "./hr-interview.css"
 
-type HRInterviewStage = "upload" | "analyzing" | "questions-ready" | "mode-selection" | "interview" | "report"
+type HRInterviewStage = "upload" | "analyzing" | "questions-ready" | "mode-selection" | "ai-model-selection" | "interview" | "report"
 type InterviewMode = "pro" | "video"
 
 interface HRResumeData {
   summary: string
   skills: string[]
   experience: string[]
+  hrEvaluation?: any | null
 }
 
 interface HRResumeAnalysis {
@@ -75,6 +77,7 @@ export default function HRInterviewSimulatorPage() {
   const [hrInterviewQuestions, setHRInterviewQuestions] = useState<HRQuestion[]>([])
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0)
   const [interviewMode, setInterviewMode] = useState<InterviewMode>("pro")
+  const [selectedAIModel, setSelectedAIModel] = useState<string>("")
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   
@@ -85,6 +88,8 @@ export default function HRInterviewSimulatorPage() {
     lastSaved: null,
     saveError: null
   })
+  // Phase 4: HR Evaluation state
+  const [hrEvaluation, setHrEvaluation] = useState<any>(null)
 
   const handleHRResumeUpload = async (file: File) => {
     try {
@@ -145,10 +150,33 @@ export default function HRInterviewSimulatorPage() {
     console.log('[Mode Selection] Cleared setup completion flag for new interview');
     
     setInterviewMode(mode)
+    
+    // For Pro mode, show AI model selection first
+    if (mode === "pro") {
+      setHRInterviewStage("ai-model-selection")
+    } else {
+      // For Video mode, go directly to interview
+      setHRInterviewStage("interview")
+    }
+  }
+
+  const handleAIModelSelection = (model: string) => {
+    setSelectedAIModel(model)
+    console.log('[AI Model Selection] Selected model:', model)
     setHRInterviewStage("interview")
   }
 
-  const handleHRNextQuestion = () => {
+  const handleBackToModeSelection = () => {
+    setHRInterviewStage("mode-selection")
+  }
+
+  const handleAIModelDialogClose = () => {
+    // This handles when the dialog is closed via X button or clicking outside
+    // Go back to mode selection
+    setHRInterviewStage("mode-selection")
+  }
+
+  const handleHRNextQuestion = async () => {
     if (currentQuestionIndex < hrInterviewQuestions.length - 1) {
       // Save current response before moving to next question
       const currentResponse = interviewResponses[currentQuestionIndex];
@@ -168,8 +196,8 @@ export default function HRInterviewSimulatorPage() {
         console.log(`[Question Navigation] Moving to Q${nextIndex + 1}, has existing response:`, nextResponse?.hasResponse);
       }
     } else {
-      // Final question - ensure all responses are saved
-      console.log('[Question Navigation] Final question reached, preparing for report');
+      // Final question - generate HR evaluation and prepare report
+      console.log('[Question Navigation] Final question reached, generating HR evaluation...');
       
       // Show summary of all responses
       const answeredCount = interviewResponses.filter(r => r.hasResponse).length;
@@ -179,7 +207,45 @@ export default function HRInterviewSimulatorPage() {
       // Save to localStorage
       localStorage.setItem('hr_interview_responses', JSON.stringify(interviewResponses));
       
-      // Generate final report
+      // Generate HR evaluation immediately after interview completion
+      let hrEvaluation = null;
+      if (interviewResponses && interviewResponses.length > 0 && hrResumeAnalysis) {
+        try {
+          console.log('🔍 Generating HR Q&A evaluation after interview completion...');
+          const evaluationResponse = await fetch('/api/hr-evaluation', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              interviewResponses,
+              resumeAnalysis: hrResumeAnalysis,
+              sessionId: `hr_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`
+            })
+          });
+
+          if (evaluationResponse.ok) {
+            const evaluationResult = await evaluationResponse.json();
+            hrEvaluation = evaluationResult.evaluation;
+            console.log('✅ HR Q&A evaluation completed after interview:', hrEvaluation);
+          } else {
+            console.warn('⚠️ HR evaluation failed, proceeding without it');
+          }
+        } catch (evaluationError) {
+          console.error('Error generating HR evaluation after interview:', evaluationError);
+          // Continue without evaluation - don't fail the entire process
+        }
+      }
+      
+      // Store the evaluation in separate state to pass to report component
+      setHrEvaluation(hrEvaluation);
+      console.log('📊 Storing HR evaluation in separate state:', {
+        hasEvaluation: !!hrEvaluation,
+        evaluationScore: hrEvaluation?.overallScore,
+        evaluationType: typeof hrEvaluation
+      });
+      
+      // Generate final report with evaluation data
       setHRInterviewStage("report")
     }
   }
@@ -204,15 +270,17 @@ export default function HRInterviewSimulatorPage() {
     setHRInterviewQuestions([])
     setCurrentQuestionIndex(0)
     setInterviewMode("pro")
+    setSelectedAIModel("")
     setHRInterviewStage("upload")
     setError(null)
-    // Reset Phase 4 response tracking
+    // Reset Phase 4 response tracking and evaluation
     setInterviewResponses([])
     setResponseStatus({
       isSaving: false,
       lastSaved: null,
       saveError: null
     })
+    setHrEvaluation(null) // Reset evaluation state
   }
 
   // Phase 4: Response Tracking Functions
@@ -547,6 +615,15 @@ export default function HRInterviewSimulatorPage() {
 
           {hrInterviewStage === "mode-selection" && <HRModeSelection onModeSelected={handleModeSelection} />}
 
+          {hrInterviewStage === "ai-model-selection" && (
+            <AIModelSelection
+              isOpen={true}
+              onModelSelected={handleAIModelSelection}
+              onClose={handleAIModelDialogClose}
+              onBack={handleBackToModeSelection}
+            />
+          )}
+
           {hrInterviewStage === "interview" && hrInterviewQuestions.length > 0 && (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 h-[calc(100vh-200px)] hr-layout">
               <div className="lg:col-span-1 hr-sidebar">
@@ -563,6 +640,7 @@ export default function HRInterviewSimulatorPage() {
                   onNextQuestion={handleHRNextQuestion}
                   isLastQuestion={currentQuestionIndex === hrInterviewQuestions.length - 1}
                   interviewMode={interviewMode}
+                  //selectedAIModel={selectedAIModel}
                   // Phase 4: Response Tracking Props
                   currentQuestionIndex={currentQuestionIndex}
                   onUpdateResponse={updateResponse}
@@ -603,6 +681,7 @@ export default function HRInterviewSimulatorPage() {
                   resumeAnalysis={hrResumeAnalysis}
                   interviewResponses={interviewResponses}
                   onRefreshResponses={refreshResponsesFromStorage}
+                  hrEvaluation={hrEvaluation}
                 />
             </div>
             )
